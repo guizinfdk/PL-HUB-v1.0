@@ -17,6 +17,8 @@ local JUMP_TEMP         = 120
 local DURACAO_TRAVA     = 0.5
 local CLONE_SO_PRA_MIM  = true
 
+local NOME_SMART = "SmartPromptPart"
+
 local Destino = { posicao = nil, usarSpawn = true }
 
 local Teleporte = {
@@ -186,46 +188,26 @@ function Disfarce.iniciar()
 end
 
 -- ============================================================
--- DETECÇÃO POR PROXIMITY PROMPT
+-- DETECÇÃO POR SmartPromptPart + ProximityPrompt
 -- ============================================================
--- Em vez de vigiar weld, vigia o momento em que um ProximityPrompt
--- é acionado pelo jogador. Quando ocorre, dispara o teleporte.
+-- Escuta PromptTriggered. Verifica se o prompt.Parent é uma Part
+-- chamada "SmartPromptPart". Se sim, dispara o teleporte.
 -- ============================================================
 
 local armado = false
 
--- Verifica se o prompt pertence a um ovo (tem "Egg" no nome em algum ancestral,
--- ou está perto/dentro de uma pasta de ovos, ou o Model tem Hitbox).
--- Se não tiver certeza, dispara mesmo assim quando armado — assim cobre
--- qualquer tipo de prompt do jogo.
-local function ehPromptDeOvo(prompt)
+local function ehSmartPrompt(prompt)
     if not prompt then return false end
-
-    -- Sobe a hierarquia procurando pistas
-    local atual = prompt
-    local profundidade = 0
-    while atual and profundidade < 6 do
-        local nome = atual.Name
-        if nome:find("Egg") or nome:find("egg") then
-            return true
-        end
-        if atual:IsA("Model") then
-            local hitbox = atual:FindFirstChild("Hitbox")
-            if hitbox then return true end
-        end
-        atual = atual.Parent
-        profundidade = profundidade + 1
-    end
-
-    return false
+    local pai = prompt.Parent
+    if not pai then return false end
+    return pai.Name == NOME_SMART
 end
 
 ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
     if not armado then return end
     if player ~= LocalPlayer then return end
-    if not ehPromptDeOvo(prompt) then return end
+    if not ehSmartPrompt(prompt) then return end
 
-    -- Dispara ambos os sistemas
     Teleporte.iniciar()
     Disfarce.iniciar()
 end)
