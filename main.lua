@@ -16,6 +16,8 @@ local JUMP_TEMP         = 120
 local DURACAO_TRAVA     = 0.5
 local CLONE_SO_PRA_MIM  = true
 
+local PASTA_OVOS        = "AreaEggSlotsClient"
+
 local Destino = { posicao = nil, usarSpawn = true }
 
 local Teleporte = {
@@ -184,13 +186,29 @@ function Disfarce.iniciar()
     end)
 end
 
+-- ============================================================
+-- DETECÇÃO — BASEADA NA LÓGICA EXATA
+-- ============================================================
+-- Model do ovo está FORA de AreaEggSlotsClient
+-- Hitbox (Part) ganha WeldConstraint quando segurado
+-- Part0 = HumanoidRootPart | Part1 = Hitbox
+-- ============================================================
+
 local function encontrarOvoSegurado()
     if not Teleporte.char then return nil end
     local root = Teleporte.char:FindFirstChild("HumanoidRootPart")
     if not root then return nil end
 
+    local pasta = Workspace:FindFirstChild(PASTA_OVOS)
+
     for _, obj in ipairs(Workspace:GetChildren()) do
-        if obj:IsA("Model") and obj ~= Teleporte.char then
+        -- Ignora o Folder dos ovos parados
+        if obj ~= pasta
+            and obj ~= Teleporte.char
+            and obj:IsA("Model")
+            -- Ignora clones locais
+            and not obj.Name:match("^CloneLocal_")
+        then
             local hitbox = obj:FindFirstChild("Hitbox")
             if hitbox and hitbox:IsA("Part") then
                 local weld = hitbox:FindFirstChildOfClass("WeldConstraint")
