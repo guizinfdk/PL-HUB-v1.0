@@ -2,6 +2,7 @@ local Players          = game:GetService("Players")
 local RunService       = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local Workspace        = game:GetService("Workspace")
 
 local LocalPlayer = Players.LocalPlayer
@@ -15,8 +16,6 @@ local WALK_TEMP         = 500
 local JUMP_TEMP         = 120
 local DURACAO_TRAVA     = 0.5
 local CLONE_SO_PRA_MIM  = true
-
-local PASTA_OVOS        = "AreaEggSlotsClient"
 
 local Destino = { posicao = nil, usarSpawn = true }
 
@@ -187,90 +186,65 @@ function Disfarce.iniciar()
 end
 
 -- ============================================================
--- DETECÇÃO UNIVERSAL
+-- DETECÇÃO POR PROXIMITY PROMPT
 -- ============================================================
--- Casos suportados:
---   1) Part0 == HumanoidRootPart       (padrão)
---   2) Part1 == HumanoidRootPart       (invertido)
---   3) Part0 == Hitbox e Part1 == Hitbox  (auto-referenciado)
--- Ignora: Part0 = nil e Part1 = Hitbox (ovo parado)
+-- Em vez de vigiar weld, vigia o momento em que um ProximityPrompt
+-- é acionado pelo jogador. Quando ocorre, dispara o teleporte.
 -- ============================================================
 
-local function weldIndicaSegurado(weld, hitbox, root)
-    if not weld then return false end
+local armado = false
 
-    local p0, p1 = weld.Part0, weld.Part1
-    if not p1 then return false end
+-- Verifica se o prompt pertence a um ovo (tem "Egg" no nome em algum ancestral,
+-- ou está perto/dentro de uma pasta de ovos, ou o Model tem Hitbox).
+-- Se não tiver certeza, dispara mesmo assim quando armado — assim cobre
+-- qualquer tipo de prompt do jogo.
+local function ehPromptDeOvo(prompt)
+    if not prompt then return false end
 
-    -- Precisa ter Part1 = Hitbox sempre
-    if p1 ~= hitbox then return false end
-
-    -- Part0 = nil → ovo parado (dentro do Folder)
-    if not p0 then return false end
-
-    -- Caso 1: Part0 = nosso root
-    if p0 == root then return true end
-
-    -- Caso 2: auto-referenciado (Part0 = Hitbox e Part1 = Hitbox)
-    -- Esse é o estado "reservado" quando você pega o ovo
-    if p0 == hitbox and p1 == hitbox then return true end
+    -- Sobe a hierarquia procurando pistas
+    local atual = prompt
+    local profundidade = 0
+    while atual and profundidade < 6 do
+        local nome = atual.Name
+        if nome:find("Egg") or nome:find("egg") then
+            return true
+        end
+        if atual:IsA("Model") then
+            local hitbox = atual:FindFirstChild("Hitbox")
+            if hitbox then return true end
+        end
+        atual = atual.Parent
+        profundidade = profundidade + 1
+    end
 
     return false
 end
 
-local function encontrarOvoSegurado()
-    if not Teleporte.char then return nil end
-    local root = Teleporte.char:FindFirstChild("HumanoidRootPart")
-    if not root then return nil end
+ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
+    if not armado then return end
+    if player ~= LocalPlayer then return end
+    if not ehPromptDeOvo(prompt) then return end
 
-    local pasta = Workspace:FindFirstChild(PASTA_OVOS)
+    -- Dispara ambos os sistemas
+    Teleporte.iniciar()
+    Disfarce.iniciar()
+end)
 
-    for _, obj in ipairs(Workspace:GetChildren()) do
-        if obj ~= pasta
-            and obj ~= Teleporte.char
-            and obj:IsA("Model")
-            and not obj.Name:match("^CloneLocal_")
-        then
-            local hitbox = obj:FindFirstChild("Hitbox")
-            if hitbox and hitbox:IsA("Part") then
-                local weld = hitbox:FindFirstChildOfClass("WeldConstraint")
-                if weldIndicaSegurado(weld, hitbox, root) then
-                    return obj
-                end
-            end
-        end
-    end
-    return nil
-end
-
-local armado, ultimoOvo = false, nil
-
+-- ============================================================
+-- RESPAWN
+-- ============================================================
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if Teleporte.ativo then Teleporte.parar() end
     Disfarce.limpar()
     Teleporte.refs()
-    ultimoOvo = nil
 end)
 
 Teleporte.refs()
 
-RunService.Heartbeat:Connect(function()
-    if not armado then return end
-    if not Teleporte.refs() then return end
-
-    local ovo = encontrarOvoSegurado()
-    if ovo then
-        if ovo ~= ultimoOvo then
-            ultimoOvo = ovo
-            Teleporte.iniciar()
-            Disfarce.iniciar()
-        end
-    else
-        ultimoOvo = nil
-    end
-end)
-
+-- ============================================================
+-- UI — PL HUB
+-- ============================================================
 local ROXO      = Color3.fromRGB(140, 80, 255)
 local ROXO_DARK = Color3.fromRGB(60, 30, 120)
 local VERDE     = Color3.fromRGB(80, 240, 110)
@@ -558,7 +532,6 @@ btnAnti.MouseButton1Click:Connect(function()
     if not armado then
         Teleporte.parar()
         Disfarce.limpar()
-        ultimoOvo = nil
     end
 end)
 
@@ -582,7 +555,6 @@ UserInputService.InputBegan:Connect(function(i, gp)
         if not armado then
             Teleporte.parar()
             Disfarce.limpar()
-            ultimoOvo = nil
         end
     end
 end)
