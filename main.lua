@@ -234,6 +234,7 @@ holder.Position = UDim2.new(0.5, -90, 0.1, 0)
 holder.BackgroundTransparency = 1
 holder.Active = true
 holder.Draggable = true
+holder.ClipsDescendants = true   -- 🔧 CORREÇÃO: esconde o que vazar
 holder.Parent = gui
 
 local bordaGradiente = Instance.new("Frame")
@@ -305,7 +306,6 @@ subtitulo.Text = "IB: @caligsc"
 subtitulo.ZIndex = 4
 subtitulo.Parent = header
 
--- Botão minimizar
 local btnMin = Instance.new("TextButton")
 btnMin.Size = UDim2.new(0, 18, 0, 18)
 btnMin.Position = UDim2.new(1, -44, 0, 7)
@@ -324,7 +324,6 @@ btnMin.MouseLeave:Connect(function()
     btnMin.TextColor3 = Color3.fromRGB(200, 180, 220)
 end)
 
--- Botão fechar
 local btnFechar = Instance.new("TextButton")
 btnFechar.Size = UDim2.new(0, 18, 0, 18)
 btnFechar.Position = UDim2.new(1, -22, 0, 7)
@@ -344,23 +343,6 @@ btnFechar.MouseLeave:Connect(function()
 end)
 btnFechar.MouseButton1Click:Connect(function()
     holder.Visible = false
-end)
-
--- Estado minimizado
-local minimizado = false
-local tamanhoNormal = UDim2.new(0, 180, 0, 160)
-local tamanhoMin    = UDim2.new(0, 180, 0, 36)
-
-btnMin.MouseButton1Click:Connect(function()
-    minimizado = not minimizado
-    if minimizado then
-        btnMin.Text = "□"
-    else
-        btnMin.Text = "—"
-    end
-    TweenService:Create(holder, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-        Size = minimizado and tamanhoMin or tamanhoNormal
-    }):Play()
 end)
 
 local faixaTopo = Instance.new("Frame")
@@ -531,6 +513,44 @@ labelStatus.TextXAlignment = Enum.TextXAlignment.Left
 labelStatus.Text = "STATUS: INATIVO"
 labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
+
+-- ============================================================
+-- MINIMIZAR — esconde tudo que não for o header
+-- ============================================================
+local corpoPainel = {
+    faixaTopo,
+    contAnti,
+    contDst,
+    contReset,
+    faixaBase,
+    rodape,
+}
+
+local minimizado = false
+local tamanhoNormal = UDim2.new(0, 180, 0, 160)
+local tamanhoMin    = UDim2.new(0, 180, 0, 36)
+
+btnMin.MouseButton1Click:Connect(function()
+    minimizado = not minimizado
+
+    if minimizado then
+        -- Esconde o corpo
+        for _, obj in ipairs(corpoPainel) do
+            obj.Visible = false
+        end
+        btnMin.Text = "□"
+    else
+        -- Mostra o corpo
+        for _, obj in ipairs(corpoPainel) do
+            obj.Visible = true
+        end
+        btnMin.Text = "—"
+    end
+
+    TweenService:Create(holder, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+        Size = minimizado and tamanhoMin or tamanhoNormal
+    }):Play()
+end)
 
 btnAnti.MouseButton1Click:Connect(function()
     bounceAnti()
