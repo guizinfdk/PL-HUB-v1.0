@@ -663,7 +663,7 @@ tabLayout.Parent = tabBar
 
 local function criarTabBtn(texto, ordem)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(0.5, -3, 1, -4)
+    b.Size = UDim2.new(1/3, -3, 1, -4)
     b.BackgroundColor3 = BG
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
@@ -677,8 +677,9 @@ local function criarTabBtn(texto, ordem)
     return b
 end
 
-local btnTabFunc = criarTabBtn("🎯", 1)
-local btnTabTps  = criarTabBtn("🌀", 2)
+local btnTabFunc  = criarTabBtn("🎯", 1)
+local btnTabTps   = criarTabBtn("🌀", 2)
+local btnTabSpeed = criarTabBtn("⚡", 3)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -695,6 +696,14 @@ containerTps.BackgroundTransparency = 1
 containerTps.ZIndex = 3
 containerTps.Visible = false
 containerTps.Parent = menu
+
+local containerSpeed = Instance.new("Frame")
+containerSpeed.Size = UDim2.new(1, 0, 1, -98)
+containerSpeed.Position = UDim2.new(0, 0, 0, 64)
+containerSpeed.BackgroundTransparency = 1
+containerSpeed.ZIndex = 3
+containerSpeed.Visible = false
+containerSpeed.Parent = menu
 
 -- Scroll Funções
 local scroll = Instance.new("ScrollingFrame")
@@ -842,24 +851,159 @@ local function popularAreas()
     end
 end
 
--- Sistema de abas
+-- ============================================
+-- ABA SPEED (⚡)
+-- ============================================
+local Speed = {
+    Active = false,
+    Value  = 100,
+    Target = nil,
+    Thread = nil,
+}
+
+local speedStatus = Instance.new("TextLabel")
+speedStatus.Size = UDim2.new(1, -16, 0, 16)
+speedStatus.Position = UDim2.new(0, 8, 0, 0)
+speedStatus.BackgroundTransparency = 1
+speedStatus.Font = Enum.Font.GothamBold
+speedStatus.TextSize = 10
+speedStatus.TextColor3 = Color3.fromRGB(180, 220, 255)
+speedStatus.TextXAlignment = Enum.TextXAlignment.Left
+speedStatus.Text = "Speed: Inativo"
+speedStatus.ZIndex = 4
+speedStatus.Parent = containerSpeed
+
+-- Botão toggle Speed
+local btnSpeedToggle = Instance.new("TextButton")
+btnSpeedToggle.Size = UDim2.new(1, -16, 0, 30)
+btnSpeedToggle.Position = UDim2.new(0, 8, 0, 22)
+btnSpeedToggle.BackgroundColor3 = BG_BTN
+btnSpeedToggle.BorderSizePixel = 0
+btnSpeedToggle.Font = Enum.Font.GothamBold
+btnSpeedToggle.TextSize = 12
+btnSpeedToggle.TextColor3 = Color3.fromRGB(230, 220, 255)
+btnSpeedToggle.Text = "⚡ Speed: OFF"
+btnSpeedToggle.ZIndex = 4
+btnSpeedToggle.Parent = containerSpeed
+Instance.new("UICorner", btnSpeedToggle).CornerRadius = UDim.new(0, 7)
+
+local strokeSpeed = Instance.new("UIStroke")
+strokeSpeed.Color = ROXO_DARK
+strokeSpeed.Thickness = 1
+strokeSpeed.Parent = btnSpeedToggle
+
+-- Slider de valor (input)
+local valorLbl = Instance.new("TextLabel")
+valorLbl.Size = UDim2.new(1, -16, 0, 14)
+valorLbl.Position = UDim2.new(0, 8, 0, 58)
+valorLbl.BackgroundTransparency = 1
+valorLbl.Font = Enum.Font.Gotham
+valorLbl.TextSize = 10
+valorLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
+valorLbl.TextXAlignment = Enum.TextXAlignment.Left
+valorLbl.Text = "Valor: 100 studs/s"
+valorLbl.ZIndex = 4
+valorLbl.Parent = containerSpeed
+
+local boxValor = Instance.new("TextBox")
+boxValor.Size = UDim2.new(1, -16, 0, 26)
+boxValor.Position = UDim2.new(0, 8, 0, 74)
+boxValor.BackgroundColor3 = BG_BTN
+boxValor.BorderSizePixel = 0
+boxValor.Font = Enum.Font.GothamBold
+boxValor.TextSize = 11
+boxValor.TextColor3 = Color3.fromRGB(230, 220, 255)
+boxValor.PlaceholderText = "Digite o valor (1-1000)"
+boxValor.Text = ""
+boxValor.ZIndex = 4
+boxValor.Parent = containerSpeed
+Instance.new("UICorner", boxValor).CornerRadius = UDim.new(0, 7)
+
+boxValor.FocusLost:Connect(function()
+    local n = tonumber(boxValor.Text)
+    if n then
+        n = math.clamp(n, 1, 1000)
+        Speed.Value = n
+        valorLbl.Text = "Valor: " .. n .. " studs/s"
+        boxValor.Text = ""
+    else
+        boxValor.Text = ""
+    end
+end)
+
+-- aplica velocidade no humanoid se ativo
+local function aplicarSpeed()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        pcall(function() hum.WalkSpeed = Speed.Value end)
+    end
+end
+
+local function pararSpeed()
+    Speed.Active = false
+    Speed.Target = nil
+    if Speed.Thread then
+        pcall(task.cancel, Speed.Thread)
+        Speed.Thread = nil
+    end
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then
+        pcall(function() hum.WalkSpeed = 16 end)
+    end
+    btnSpeedToggle.Text = "⚡ Speed: OFF"
+    btnSpeedToggle.BackgroundColor3 = BG_BTN
+    strokeSpeed.Color = ROXO_DARK
+end
+
+local function iniciarSpeed()
+    Speed.Active = true
+    btnSpeedToggle.Text = "⚡ Speed: ON"
+    btnSpeedToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
+    strokeSpeed.Color = VERDE
+    aplicarSpeed()
+
+    if Speed.Thread then pcall(task.cancel, Speed.Thread) end
+    Speed.Thread = task.spawn(function()
+        while Speed.Active do
+            aplicarSpeed()
+            task.wait(0.2)
+        end
+    end)
+end
+
+btnSpeedToggle.MouseButton1Click:Connect(function()
+    if Speed.Active then
+        pararSpeed()
+        Toast("Speed OFF", AMARELO)
+    else
+        iniciarSpeed()
+        Toast("Speed ON", VERDE)
+    end
+end)
+
+-- ============================================
+-- SISTEMA DE ABAS
+-- ============================================
 local abaAtiva = 1
 local function atualizarAbas()
-    if abaAtiva == 1 then
-        containerFunc.Visible = true
-        containerTps.Visible = false
-        btnTabFunc.BackgroundColor3 = Color3.fromRGB(50, 30, 80)
-        btnTabFunc.TextColor3 = ROXO
-        btnTabTps.BackgroundColor3 = BG
-        btnTabTps.TextColor3 = Color3.fromRGB(200, 180, 220)
-    else
-        containerFunc.Visible = false
-        containerTps.Visible = true
-        btnTabFunc.BackgroundColor3 = BG
-        btnTabFunc.TextColor3 = Color3.fromRGB(200, 180, 220)
-        btnTabTps.BackgroundColor3 = Color3.fromRGB(50, 30, 80)
-        btnTabTps.TextColor3 = ROXO
+    containerFunc.Visible  = (abaAtiva == 1)
+    containerTps.Visible   = (abaAtiva == 2)
+    containerSpeed.Visible = (abaAtiva == 3)
+
+    local function setCor(btn, ativo)
+        if ativo then
+            btn.BackgroundColor3 = Color3.fromRGB(50, 30, 80)
+            btn.TextColor3 = ROXO
+        else
+            btn.BackgroundColor3 = BG
+            btn.TextColor3 = Color3.fromRGB(200, 180, 220)
+        end
     end
+    setCor(btnTabFunc,  abaAtiva == 1)
+    setCor(btnTabTps,   abaAtiva == 2)
+    setCor(btnTabSpeed, abaAtiva == 3)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -871,6 +1015,11 @@ btnTabTps.MouseButton1Click:Connect(function()
     abaAtiva = 2
     atualizarAbas()
     popularAreas()
+end)
+
+btnTabSpeed.MouseButton1Click:Connect(function()
+    abaAtiva = 3
+    atualizarAbas()
 end)
 
 -- Fábrica de botões (funções)
@@ -1030,7 +1179,7 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, faixaBase, rodape }
 local minimizado = false
 local tamanhoNormal = UDim2.new(0, 180, 0, 200)
 local tamanhoMin    = UDim2.new(0, 180, 0, 36)
