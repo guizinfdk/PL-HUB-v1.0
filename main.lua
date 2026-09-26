@@ -14,7 +14,7 @@ local DISTANCIA_CHEGADA = 4
 local IGNORAR_EIXO_Y    = true
 local WALK_TEMP         = 500
 local JUMP_TEMP         = 120
-local DURACAO_TRAVA     = 1
+local DURACAO_TRAVA     = 0.8
 local CLONE_SO_PRA_MIM  = true
 local NOME_SMART        = "SmartPromptPart"
 
@@ -855,10 +855,11 @@ end
 -- ABA SPEED (⚡)
 -- ============================================
 local Speed = {
-    Active = false,
-    Value  = 100,
-    Target = nil,
-    Thread = nil,
+    Active      = false,
+    Value       = 100,
+    Thread      = nil,
+    WalkOrig    = nil,   -- guarda o WalkSpeed original
+    Capturado   = false, -- se já salvamos o valor original
 }
 
 local speedStatus = Instance.new("TextLabel")
@@ -873,7 +874,6 @@ speedStatus.Text = "Speed: Inativo"
 speedStatus.ZIndex = 4
 speedStatus.Parent = containerSpeed
 
--- Botão toggle Speed
 local btnSpeedToggle = Instance.new("TextButton")
 btnSpeedToggle.Size = UDim2.new(1, -16, 0, 30)
 btnSpeedToggle.Position = UDim2.new(0, 8, 0, 22)
@@ -892,7 +892,6 @@ strokeSpeed.Color = ROXO_DARK
 strokeSpeed.Thickness = 1
 strokeSpeed.Parent = btnSpeedToggle
 
--- Slider de valor (input)
 local valorLbl = Instance.new("TextLabel")
 valorLbl.Size = UDim2.new(1, -16, 0, 14)
 valorLbl.Position = UDim2.new(0, 8, 0, 58)
@@ -931,7 +930,6 @@ boxValor.FocusLost:Connect(function()
     end
 end)
 
--- aplica velocidade no humanoid se ativo
 local function aplicarSpeed()
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -942,22 +940,36 @@ end
 
 local function pararSpeed()
     Speed.Active = false
-    Speed.Target = nil
     if Speed.Thread then
         pcall(task.cancel, Speed.Thread)
         Speed.Thread = nil
     end
+    -- Restaura o WalkSpeed original salvo
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        pcall(function() hum.WalkSpeed = 16 end)
+    if hum and Speed.WalkOrig then
+        pcall(function() hum.WalkSpeed = Speed.WalkOrig end)
     end
+    -- Limpa o cache para próxima ativação recapturar
+    Speed.WalkOrig  = nil
+    Speed.Capturado = false
+
     btnSpeedToggle.Text = "⚡ Speed: OFF"
     btnSpeedToggle.BackgroundColor3 = BG_BTN
     strokeSpeed.Color = ROXO_DARK
 end
 
 local function iniciarSpeed()
+    -- Salva o WalkSpeed original só uma vez por ativação
+    if not Speed.Capturado then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            Speed.WalkOrig = hum.WalkSpeed
+            Speed.Capturado = true
+        end
+    end
+
     Speed.Active = true
     btnSpeedToggle.Text = "⚡ Speed: ON"
     btnSpeedToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
@@ -1539,7 +1551,6 @@ do
         return true
     end
 
-    -- Respawn: re-aplica se já estiver ligado
     LocalPlayer.CharacterAdded:Connect(function(char)
         task.wait(0.3)
         if BypassState.Enabled then
@@ -1547,7 +1558,6 @@ do
         end
     end)
 
-    -- Callback do botão
     btnBypass.MouseButton1Click:Connect(function()
         bounceBypass()
         if BypassState.Enabled then return end
