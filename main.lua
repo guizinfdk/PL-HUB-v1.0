@@ -4,6 +4,7 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService     = game:GetService("TweenService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local Workspace        = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
@@ -14,7 +15,7 @@ local DISTANCIA_CHEGADA = 4
 local IGNORAR_EIXO_Y    = true
 local WALK_TEMP         = 500
 local JUMP_TEMP         = 120
-local DURACAO_TRAVA     = 0.8
+local DURACAO_TRAVA     = 1
 local CLONE_SO_PRA_MIM  = true
 local NOME_SMART        = "SmartPromptPart"
 
@@ -23,6 +24,59 @@ local DEBUG_KB  = false
 local THRESHOLD_KB = 15
 
 local Destino = { posicao = nil, usarSpawn = true }
+
+-- MÓDULOS ESP
+local EggState, AreasData, RarityData, AssetsData, PetsData
+pcall(function() EggState   = require(ReplicatedStorage.Client.EggState) end)
+pcall(function() AreasData  = require(ReplicatedStorage.Data.Areas) end)
+pcall(function() RarityData = require(ReplicatedStorage.Data.Rarity) end)
+pcall(function() AssetsData = require(ReplicatedStorage.Data.Assets) end)
+pcall(function() PetsData   = require(ReplicatedStorage.Data.Pets) end)
+
+local RARITY_SCORE_MAP = {
+    ["Light & Dark"]    = 1300, ["Titan"]           = 1100,
+    ["Divine"]          = 1000, ["Transcendent"]    = 1000,
+    ["Superior"]        = 1000, ["Eternal"]         = 900,
+    ["Limited"]         = 900,  ["Secret"]          = 800,
+    ["Exotic"]          = 800,  ["Cosmic"]          = 700,
+    ["Exclusive"]       = 700,  ["Admin"]           = 700,
+    ["Mythic"]          = 600,  ["Mythical"]        = 600,
+    ["Prismatic"]       = 600,  ["Rainbow"]         = 600,
+    ["Squishy God"]     = 600,  ["BrainrotGod"]     = 600,
+    ["Legendary"]       = 500,  ["Epic"]            = 400,
+    ["Rare"]            = 300,  ["SuperRare"]       = 200,
+    ["Celestial"]       = 200,  ["Uncommon"]        = 200,
+    ["Basic"]           = 100,  ["Common"]          = 100,
+}
+
+local RARITY_COLOR = {
+    ["Light & Dark"]    = Color3.fromRGB(255, 100, 255),
+    ["Titan"]           = Color3.fromRGB(255, 80, 80),
+    ["Divine"]          = Color3.fromRGB(255, 215, 0),
+    ["Transcendent"]    = Color3.fromRGB(255, 180, 255),
+    ["Superior"]        = Color3.fromRGB(200, 255, 100),
+    ["Eternal"]         = Color3.fromRGB(180, 220, 255),
+    ["Limited"]         = Color3.fromRGB(255, 200, 100),
+    ["Secret"]          = Color3.fromRGB(255, 100, 200),
+    ["Exotic"]          = Color3.fromRGB(255, 140, 60),
+    ["Cosmic"]          = Color3.fromRGB(160, 100, 255),
+    ["Exclusive"]       = Color3.fromRGB(255, 150, 50),
+    ["Admin"]           = Color3.fromRGB(255, 50, 50),
+    ["Mythic"]          = Color3.fromRGB(255, 60, 200),
+    ["Mythical"]        = Color3.fromRGB(255, 60, 200),
+    ["Prismatic"]       = Color3.fromRGB(150, 255, 200),
+    ["Rainbow"]         = Color3.fromRGB(255, 120, 120),
+    ["Squishy God"]     = Color3.fromRGB(120, 200, 255),
+    ["BrainrotGod"]     = Color3.fromRGB(255, 200, 0),
+    ["Legendary"]       = Color3.fromRGB(255, 200, 0),
+    ["Epic"]            = Color3.fromRGB(180, 80, 255),
+    ["Rare"]            = Color3.fromRGB(80, 150, 255),
+    ["SuperRare"]       = Color3.fromRGB(80, 200, 255),
+    ["Celestial"]       = Color3.fromRGB(200, 220, 255),
+    ["Uncommon"]        = Color3.fromRGB(100, 255, 100),
+    ["Basic"]           = Color3.fromRGB(200, 200, 200),
+    ["Common"]          = Color3.fromRGB(180, 180, 180),
+}
 
 -- TELEPORTE
 local Teleporte = {
@@ -524,8 +578,8 @@ end
 -- Holder
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
-holder.Size = UDim2.new(0, 180, 0, 200)
-holder.Position = UDim2.new(0.5, -90, 0.1, 0)
+holder.Size = UDim2.new(0, 200, 0, 220)
+holder.Position = UDim2.new(0.5, -100, 0.1, 0)
 holder.BackgroundTransparency = 1
 holder.Active = true
 holder.Draggable = true
@@ -643,7 +697,7 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- TabBar
+-- TabBar (4 abas agora)
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -16, 0, 22)
 tabBar.Position = UDim2.new(0, 8, 0, 38)
@@ -663,11 +717,11 @@ tabLayout.Parent = tabBar
 
 local function criarTabBtn(texto, ordem)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1/3, -3, 1, -4)
+    b.Size = UDim2.new(1/4, -3, 1, -4)
     b.BackgroundColor3 = BG
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
-    b.TextSize = 14
+    b.TextSize = 13
     b.TextColor3 = Color3.fromRGB(200, 180, 220)
     b.Text = texto
     b.LayoutOrder = ordem
@@ -680,6 +734,7 @@ end
 local btnTabFunc  = criarTabBtn("🎯", 1)
 local btnTabTps   = criarTabBtn("🌀", 2)
 local btnTabSpeed = criarTabBtn("⚡", 3)
+local btnTabEye   = criarTabBtn("👁️", 4)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -704,6 +759,14 @@ containerSpeed.BackgroundTransparency = 1
 containerSpeed.ZIndex = 3
 containerSpeed.Visible = false
 containerSpeed.Parent = menu
+
+local containerEye = Instance.new("Frame")
+containerEye.Size = UDim2.new(1, 0, 1, -98)
+containerEye.Position = UDim2.new(0, 0, 0, 64)
+containerEye.BackgroundTransparency = 1
+containerEye.ZIndex = 3
+containerEye.Visible = false
+containerEye.Parent = menu
 
 -- Scroll Funções
 local scroll = Instance.new("ScrollingFrame")
@@ -858,8 +921,8 @@ local Speed = {
     Active      = false,
     Value       = 100,
     Thread      = nil,
-    WalkOrig    = nil,   -- guarda o WalkSpeed original
-    Capturado   = false, -- se já salvamos o valor original
+    WalkOrig    = nil,
+    Capturado   = false,
 }
 
 local speedStatus = Instance.new("TextLabel")
@@ -944,13 +1007,11 @@ local function pararSpeed()
         pcall(task.cancel, Speed.Thread)
         Speed.Thread = nil
     end
-    -- Restaura o WalkSpeed original salvo
     local char = LocalPlayer.Character
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if hum and Speed.WalkOrig then
         pcall(function() hum.WalkSpeed = Speed.WalkOrig end)
     end
-    -- Limpa o cache para próxima ativação recapturar
     Speed.WalkOrig  = nil
     Speed.Capturado = false
 
@@ -960,7 +1021,6 @@ local function pararSpeed()
 end
 
 local function iniciarSpeed()
-    -- Salva o WalkSpeed original só uma vez por ativação
     if not Speed.Capturado then
         local char = LocalPlayer.Character
         local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -996,6 +1056,270 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
+-- ESP STATE + STORAGE
+-- ============================================
+local espOvosAtivo     = false
+local maxEspDistance   = 1000
+local targetRarityName = "Todos"
+
+local espFolder = Instance.new("Folder")
+espFolder.Name   = "ESP_STORAGE"
+espFolder.Parent = Workspace
+
+local activeEggESP = {}
+
+local function limparObjetoESP(tbl, id)
+    if tbl[id] then
+        pcall(function() if tbl[id].gui then tbl[id].gui:Destroy() end end)
+        tbl[id] = nil
+    end
+end
+
+local function limparTudoESP(tbl)
+    for id in pairs(tbl) do limparObjetoESP(tbl, id) end
+end
+
+-- Helpers de raridade/ícone
+local function GetEggRarityInfo(egg)
+    if not egg then return "Common", 100 end
+
+    if egg.Rarity then
+        local r = egg.Rarity
+        local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
+        return name, RARITY_SCORE_MAP[name] or 100
+    end
+
+    local cat = egg.AssetCategory or egg.Category or egg.Name
+    if cat and AssetsData then
+        local aInfo = (AssetsData.Directory or AssetsData)[cat]
+        if aInfo and aInfo.Rarity then
+            local r = aInfo.Rarity
+            local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
+            return name, RARITY_SCORE_MAP[name] or 100
+        end
+    end
+
+    local areaData = AreasData and (AreasData.Directory or AreasData) and (AreasData.Directory or AreasData)[egg.AreaId]
+    local rarity = areaData and areaData.Rarity
+    local rarityId = (type(rarity) == "table" and (rarity._id or rarity.DisplayName or rarity.Name))
+        or (type(rarity) == "string" and rarity) or "Common"
+    local rInfo = (RarityData and (RarityData.Rarities or RarityData) or {})[rarityId] or {}
+    local rarityDisplayName = (type(rInfo) == "table" and (rInfo.DisplayName or rInfo._id))
+        or (type(rarity) == "table" and rarity.DisplayName) or rarityId or "Common"
+
+    return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
+end
+
+local function GetPetIcon(record)
+    if not record then return nil end
+
+    local rawIcon = record.Icon or record.PetIcon or record.ImageAsset or record.TextureId
+    if rawIcon then
+        return (type(rawIcon) == "number" or not string.match(tostring(rawIcon), "://"))
+            and ("rbxassetid://" .. tostring(rawIcon)) or tostring(rawIcon)
+    end
+
+    local targetName = record.Pet or record.PetId or record.PetName
+        or record.AssetCategory or record.Category
+    if targetName then
+        if PetsData then
+            local pInfo = (PetsData.Directory or PetsData)[targetName]
+            if pInfo and (pInfo.Icon or pInfo.Image or pInfo.AssetId) then
+                local img = pInfo.Icon or pInfo.Image or pInfo.AssetId
+                return (type(img) == "number" or not string.match(tostring(img), "://"))
+                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
+            end
+        end
+        if AssetsData then
+            local aInfo = (AssetsData.Directory or AssetsData)[targetName]
+            if aInfo and (aInfo.Icon or aInfo.Image or aInfo.AssetId) then
+                local img = aInfo.Icon or aInfo.Image or aInfo.AssetId
+                return (type(img) == "number" or not string.match(tostring(img), "://"))
+                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
+            end
+        end
+    end
+    return nil
+end
+
+-- ============================================
+-- ABA 👁️ — VISUALIZADOR DETALHADO
+-- ============================================
+local eyeHeaderLbl = Instance.new("TextLabel")
+eyeHeaderLbl.Size = UDim2.new(1, -16, 0, 14)
+eyeHeaderLbl.Position = UDim2.new(0, 8, 0, 0)
+eyeHeaderLbl.BackgroundTransparency = 1
+eyeHeaderLbl.Font = Enum.Font.GothamBold
+eyeHeaderLbl.TextSize = 10
+eyeHeaderLbl.TextColor3 = Color3.fromRGB(180, 220, 255)
+eyeHeaderLbl.TextXAlignment = Enum.TextXAlignment.Left
+eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos"
+eyeHeaderLbl.ZIndex = 4
+eyeHeaderLbl.Parent = containerEye
+
+local scrollEye = Instance.new("ScrollingFrame")
+scrollEye.Name = "ScrollEye"
+scrollEye.Size = UDim2.new(1, 0, 1, -22)
+scrollEye.Position = UDim2.new(0, 0, 0, 18)
+scrollEye.BackgroundTransparency = 1
+scrollEye.BorderSizePixel = 0
+scrollEye.ScrollBarThickness = 4
+scrollEye.ScrollBarImageColor3 = ROXO
+scrollEye.ScrollBarImageTransparency = 0.3
+scrollEye.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollEye.AutomaticCanvasSize = Enum.AutomaticSize.Y
+scrollEye.ScrollingDirection = Enum.ScrollingDirection.Y
+scrollEye.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+scrollEye.ZIndex = 3
+scrollEye.Parent = containerEye
+
+local eyeLayout = Instance.new("UIListLayout")
+eyeLayout.Padding = UDim.new(0, 5)
+eyeLayout.SortOrder = Enum.SortOrder.LayoutOrder
+eyeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+eyeLayout.Parent = scrollEye
+
+local eyePad = Instance.new("UIPadding")
+eyePad.PaddingTop = UDim.new(0, 2)
+eyePad.PaddingBottom = UDim.new(0, 4)
+eyePad.Parent = scrollEye
+
+local function limparListaEye()
+    for _, c in ipairs(scrollEye:GetChildren()) do
+        if c:IsA("GuiObject") then c:Destroy() end
+    end
+end
+
+local function atualizarListaEye(records)
+    table.sort(records, function(a, b) return a.dist < b.dist end)
+
+    eyeHeaderLbl.Text = string.format("ESP: %s | Filtro: %s | %d ovos",
+        espOvosAtivo and "ON" or "OFF", targetRarityName, #records)
+
+    limparListaEye()
+    if #records == 0 then
+        local empty = Instance.new("TextLabel")
+        empty.Size              = UDim2.new(1, -8, 0, 40)
+        empty.BackgroundTransparency = 1
+        empty.Text              = "Nenhum ovo detectado."
+        empty.TextColor3        = Color3.fromRGB(150, 150, 160)
+        empty.Font              = Enum.Font.Gotham
+        empty.TextSize          = 10
+        empty.TextWrapped       = true
+        empty.LayoutOrder       = 1
+        empty.Parent            = scrollEye
+        return
+    end
+
+    for i, rec in ipairs(records) do
+        if i > 40 then break end
+
+        local rarCor = RARITY_COLOR[rec.rarity] or ROXO
+
+        local card = Instance.new("Frame")
+        card.Size             = UDim2.new(1, -8, 0, 64)
+        card.BackgroundColor3 = BG_BTN
+        card.BorderSizePixel  = 0
+        card.LayoutOrder      = i
+        card.Parent           = scrollEye
+
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
+
+        local stroke = Instance.new("UIStroke")
+        stroke.Color        = rarCor
+        stroke.Thickness    = 1
+        stroke.Transparency = 0.4
+        stroke.Parent       = card
+
+        local barra = Instance.new("Frame")
+        barra.Size             = UDim2.new(0, 3, 1, -10)
+        barra.Position         = UDim2.new(0, 4, 0, 5)
+        barra.BackgroundColor3 = rarCor
+        barra.BorderSizePixel  = 0
+        barra.Parent           = card
+
+        Instance.new("UICorner", barra).CornerRadius = UDim.new(0, 2)
+
+        -- Imagem
+        local imgFrame = Instance.new("Frame")
+        imgFrame.Size             = UDim2.new(0, 48, 0, 48)
+        imgFrame.Position         = UDim2.new(0, 12, 0, 8)
+        imgFrame.BackgroundColor3 = BG
+        imgFrame.BorderSizePixel  = 0
+        imgFrame.Parent           = card
+
+        Instance.new("UICorner", imgFrame).CornerRadius = UDim.new(0, 5)
+
+        local imgStroke = Instance.new("UIStroke")
+        imgStroke.Color        = rarCor
+        imgStroke.Thickness    = 1
+        imgStroke.Transparency = 0.5
+        imgStroke.Parent       = imgFrame
+
+        local img = Instance.new("ImageLabel")
+        img.Size              = UDim2.new(1, -4, 1, -4)
+        img.Position          = UDim2.new(0, 2, 0, 2)
+        img.BackgroundTransparency = 1
+        img.ScaleType         = Enum.ScaleType.Fit
+        img.Image             = rec.icon or ""
+        img.Parent            = imgFrame
+
+        -- Nome
+        local nameL = Instance.new("TextLabel")
+        nameL.Size              = UDim2.new(1, -80, 0, 14)
+        nameL.Position          = UDim2.new(0, 66, 0, 6)
+        nameL.BackgroundTransparency = 1
+        nameL.Text              = rec.name or "?"
+        nameL.TextColor3        = Color3.fromRGB(240, 240, 245)
+        nameL.Font              = Enum.Font.GothamBold
+        nameL.TextSize          = 11
+        nameL.TextXAlignment    = Enum.TextXAlignment.Left
+        nameL.TextTruncate      = Enum.TextTruncate.AtEnd
+        nameL.Parent            = card
+
+        -- Raridade
+        local rarL = Instance.new("TextLabel")
+        rarL.Size              = UDim2.new(1, -80, 0, 12)
+        rarL.Position          = UDim2.new(0, 66, 0, 20)
+        rarL.BackgroundTransparency = 1
+        rarL.Text              = "★ " .. (rec.rarity or "?")
+        rarL.TextColor3        = rarCor
+        rarL.Font              = Enum.Font.GothamBold
+        rarL.TextSize          = 9
+        rarL.TextXAlignment    = Enum.TextXAlignment.Left
+        rarL.Parent            = card
+
+        -- Distância
+        local distL = Instance.new("TextLabel")
+        distL.Size              = UDim2.new(1, -80, 0, 12)
+        distL.Position          = UDim2.new(0, 66, 0, 32)
+        distL.BackgroundTransparency = 1
+        distL.Text              = "📏 " .. rec.dist .. "m  ⚖ " .. (RARITY_SCORE_MAP[rec.rarity] or 100)
+        distL.TextColor3        = Color3.fromRGB(150, 150, 160)
+        distL.Font              = Enum.Font.Gotham
+        distL.TextSize          = 9
+        distL.TextXAlignment    = Enum.TextXAlignment.Left
+        distL.Parent            = card
+
+        -- Badge "MAIS PRÓXIMO"
+        if i == 1 then
+            local badge = Instance.new("TextLabel")
+            badge.Size              = UDim2.new(0, 56, 0, 12)
+            badge.Position          = UDim2.new(1, -62, 1, -16)
+            badge.BackgroundColor3 = VERDE
+            badge.BorderSizePixel  = 0
+            badge.Text              = "PRÓXIMO"
+            badge.TextColor3        = BG
+            badge.Font              = Enum.Font.GothamBlack
+            badge.TextSize          = 8
+            badge.Parent            = card
+
+            Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 3)
+        end
+    end
+end
+
+-- ============================================
 -- SISTEMA DE ABAS
 -- ============================================
 local abaAtiva = 1
@@ -1003,6 +1327,7 @@ local function atualizarAbas()
     containerFunc.Visible  = (abaAtiva == 1)
     containerTps.Visible   = (abaAtiva == 2)
     containerSpeed.Visible = (abaAtiva == 3)
+    containerEye.Visible   = (abaAtiva == 4)
 
     local function setCor(btn, ativo)
         if ativo then
@@ -1016,6 +1341,7 @@ local function atualizarAbas()
     setCor(btnTabFunc,  abaAtiva == 1)
     setCor(btnTabTps,   abaAtiva == 2)
     setCor(btnTabSpeed, abaAtiva == 3)
+    setCor(btnTabEye,   abaAtiva == 4)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -1031,6 +1357,11 @@ end)
 
 btnTabSpeed.MouseButton1Click:Connect(function()
     abaAtiva = 3
+    atualizarAbas()
+end)
+
+btnTabEye.MouseButton1Click:Connect(function()
+    abaAtiva = 4
     atualizarAbas()
 end)
 
@@ -1138,11 +1469,14 @@ local btnKB,    contKB,    labelKB,    setaKB,    barraKB,    bordaKB,    bounce
 local btnBypass, contBypass, labelBypass, setaBypass, barraBypass, bordaBypass, bounceBypass =
     criarBotaoCyber(30, "🔥 BYPASS", 4)
 
+local btnESP,   contESP,   labelESP,   setaESP,   barraESP,   bordaESP,   bounceESP   =
+    criarBotaoCyber(30, "🥚 ESP OVOS", 5)
+
 local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounceDst   =
-    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 5)
+    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 6)
 
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
-    criarBotaoCyber(30, "🎯 RESET SPAWN", 6)
+    criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
@@ -1191,10 +1525,10 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, faixaBase, rodape }
 local minimizado = false
-local tamanhoNormal = UDim2.new(0, 180, 0, 200)
-local tamanhoMin    = UDim2.new(0, 180, 0, 36)
+local tamanhoNormal = UDim2.new(0, 200, 0, 220)
+local tamanhoMin    = UDim2.new(0, 200, 0, 36)
 
 btnMin.MouseButton1Click:Connect(function()
     minimizado = not minimizado
@@ -1231,6 +1565,16 @@ btnKB.MouseButton1Click:Connect(function()
     else
         ultimaPosKB = nil
         Toast("Anti-KB OFF", AMARELO)
+    end
+end)
+
+btnESP.MouseButton1Click:Connect(function()
+    bounceESP()
+    espOvosAtivo = not espOvosAtivo
+    if espOvosAtivo then
+        Toast("ESP ON", VERDE)
+    else
+        Toast("ESP OFF", AMARELO)
     end
 end)
 
@@ -1305,6 +1649,23 @@ end)
 
 task.spawn(function()
     while gui.Parent do
+        -- ESP button color
+        if espOvosAtivo then
+            contESP.BackgroundColor3       = Color3.fromRGB(20, 55, 28)
+            barraESP.BackgroundColor3      = VERDE
+            bordaESP.Color                 = VERDE
+            labelESP.TextColor3            = Color3.fromRGB(180, 255, 200)
+            setaESP.TextColor3             = VERDE
+            labelESP.Text                  = "🥚 ESP OVOS  [ON]"
+        else
+            contESP.BackgroundColor3       = BG_BTN
+            barraESP.BackgroundColor3      = ROXO
+            bordaESP.Color                 = ROXO_DARK
+            labelESP.TextColor3            = Color3.fromRGB(230, 220, 255)
+            setaESP.TextColor3             = ROXO
+            labelESP.Text                  = "🥚 ESP OVOS"
+        end
+
         if armado then
             contAnti.BackgroundColor3     = Color3.fromRGB(20, 55, 28)
             barraAnti.BackgroundColor3    = VERDE
@@ -1367,7 +1728,11 @@ task.spawn(function()
             labelDst.Text                 = "✅ DESTINO SALVO"
         end
 
-        if AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
+        if espOvosAtivo then
+            ledRodape.BackgroundColor3    = VERDE
+            labelStatus.TextColor3        = VERDE
+            labelStatus.Text              = "STATUS: ESP ATIVO"
+        elseif AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
             ledRodape.BackgroundColor3    = VERMELHO
             labelStatus.TextColor3        = VERMELHO
             labelStatus.Text              = "STATUS: ANTI-TRAP ON"
@@ -1392,6 +1757,124 @@ task.spawn(function()
         task.wait(0.15)
     end
 end)
+
+-- ==========================================
+-- ESP LOOP PRINCIPAL (roda em background)
+-- ==========================================
+task.spawn(function()
+    while gui.Parent do
+        task.wait(0.2)
+        pcall(function()
+            local char = LocalPlayer.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+            local myPos = hrp and hrp.Position or Vector3.zero
+
+            if espOvosAtivo and EggState and EggState.ReadFieldEggs then
+                local ok, snapshot = pcall(EggState.ReadFieldEggs)
+                if ok and snapshot and snapshot.Records then
+                    local currentUids = {}
+                    local visiveis    = {}
+
+                    for _, record in ipairs(snapshot.Records) do
+                        if record.State == "Slot" and record.BoundsCFrame then
+                            local eggPos = record.BoundsCFrame.Position
+                            local dist   = math.floor((eggPos - myPos).Magnitude)
+
+                            if dist <= maxEspDistance then
+                                local rarityName = GetEggRarityInfo(record)
+
+                                if targetRarityName == "Todos"
+                                or rarityName:lower() == targetRarityName:lower() then
+
+                                    local uid = record.Uid or tostring(record.BoundsCFrame)
+                                    currentUids[uid] = true
+
+                                    if not activeEggESP[uid] then
+                                        local bb = Instance.new("BillboardGui")
+                                        bb.Name         = "ESP_EGG_" .. uid
+                                        bb.AlwaysOnTop  = true
+                                        bb.Size         = UDim2.fromOffset(140, 80)
+                                        bb.StudsOffset  = Vector3.new(0, 3, 0)
+
+                                        local container = Instance.new("Frame")
+                                        container.Size              = UDim2.fromScale(1, 1)
+                                        container.BackgroundTransparency = 1
+                                        container.Parent            = bb
+
+                                        local layout2 = Instance.new("UIListLayout")
+                                        layout2.SortOrder         = Enum.SortOrder.LayoutOrder
+                                        layout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                                        layout2.VerticalAlignment   = Enum.VerticalAlignment.Center
+                                        layout2.Padding           = UDim.new(0, 2)
+                                        layout2.Parent            = container
+
+                                        local petImage = Instance.new("ImageLabel")
+                                        petImage.Name              = "PetIcon"
+                                        petImage.Size              = UDim2.fromOffset(36, 36)
+                                        petImage.BackgroundTransparency = 1
+                                        petImage.ScaleType         = Enum.ScaleType.Fit
+                                        petImage.LayoutOrder       = 1
+                                        petImage.Parent            = container
+
+                                        local textLabel = Instance.new("TextLabel")
+                                        textLabel.Name              = "EggText"
+                                        textLabel.Size              = UDim2.new(1, 0, 0, 30)
+                                        textLabel.BackgroundTransparency = 1
+                                        textLabel.Font              = Enum.Font.GothamBold
+                                        textLabel.TextSize          = 12
+                                        textLabel.TextColor3        = Color3.fromRGB(0, 255, 0)
+                                        textLabel.TextStrokeTransparency = 0.2
+                                        textLabel.LayoutOrder       = 2
+                                        textLabel.Parent            = container
+
+                                        bb.Parent = espFolder
+                                        activeEggESP[uid] = { gui = bb, label = textLabel, image = petImage }
+                                    end
+
+                                    local espItem = activeEggESP[uid]
+                                    if espItem then
+                                        espItem.gui.StudsOffsetWorldSpace = eggPos + Vector3.new(0, 2.5, 0)
+                                        espItem.label.Text = string.format(
+                                            "%s\n[%s] - %dm",
+                                            record.AssetCategory or "Ovo", rarityName, dist
+                                        )
+                                        local iconAsset = GetPetIcon(record)
+                                        if iconAsset then
+                                            espItem.image.Image   = iconAsset
+                                            espItem.image.Visible = true
+                                        else
+                                            espItem.image.Visible = false
+                                        end
+                                    end
+
+                                    table.insert(visiveis, {
+                                        name   = record.AssetCategory or record.Pet or "Ovo",
+                                        rarity = rarityName,
+                                        dist   = dist,
+                                        icon   = GetPetIcon(record),
+                                    })
+                                end
+                            end
+                        end
+                    end
+
+                    for uid in pairs(activeEggESP) do
+                        if not currentUids[uid] then
+                            limparObjetoESP(activeEggESP, uid)
+                        end
+                    end
+
+                    atualizarListaEye(visiveis)
+                end
+            else
+                limparTudoESP(activeEggESP)
+                atualizarListaEye({})
+            end
+        end)
+    end
+end)
+
+atualizarAbas()
 
 -- ==========================================
 -- BYPASS (Humanoid swap) — botão 🔥 BYPASS
