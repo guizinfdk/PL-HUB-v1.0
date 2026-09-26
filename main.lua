@@ -697,7 +697,7 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- TabBar (4 abas agora)
+-- TabBar (4 abas)
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -16, 0, 22)
 tabBar.Position = UDim2.new(0, 8, 0, 38)
@@ -1153,14 +1153,69 @@ eyeHeaderLbl.Font = Enum.Font.GothamBold
 eyeHeaderLbl.TextSize = 10
 eyeHeaderLbl.TextColor3 = Color3.fromRGB(180, 220, 255)
 eyeHeaderLbl.TextXAlignment = Enum.TextXAlignment.Left
-eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos"
+eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos | 0 ovos"
 eyeHeaderLbl.ZIndex = 4
 eyeHeaderLbl.Parent = containerEye
 
+-- Toggle ESP dentro da aba 👁️
+local btnEyeToggle = Instance.new("TextButton")
+btnEyeToggle.Size = UDim2.new(1, -16, 0, 26)
+btnEyeToggle.Position = UDim2.new(0, 8, 0, 18)
+btnEyeToggle.BackgroundColor3 = BG_BTN
+btnEyeToggle.BorderSizePixel = 0
+btnEyeToggle.Font = Enum.Font.GothamBold
+btnEyeToggle.TextSize = 11
+btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
+btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
+btnEyeToggle.ZIndex = 4
+btnEyeToggle.Parent = containerEye
+Instance.new("UICorner", btnEyeToggle).CornerRadius = UDim.new(0, 6)
+
+-- Filtro dentro da aba 👁️
+local btnEyeFiltro = Instance.new("TextButton")
+btnEyeFiltro.Size = UDim2.new(1, -16, 0, 26)
+btnEyeFiltro.Position = UDim2.new(0, 8, 0, 48)
+btnEyeFiltro.BackgroundColor3 = BG_BTN
+btnEyeFiltro.BorderSizePixel = 0
+btnEyeFiltro.Font = Enum.Font.GothamBold
+btnEyeFiltro.TextSize = 11
+btnEyeFiltro.TextColor3 = Color3.fromRGB(230, 220, 255)
+btnEyeFiltro.Text = "Filtro: Todos"
+btnEyeFiltro.ZIndex = 4
+btnEyeFiltro.Parent = containerEye
+Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 6)
+
+local niveisFiltroEye = {
+    "Todos","Common","Uncommon","Rare","Epic","Legendary",
+    "Mythic","Cosmic","Secret","Eternal","Divine"
+}
+local idxFiltroEye = 1
+
+btnEyeFiltro.MouseButton1Click:Connect(function()
+    idxFiltroEye = idxFiltroEye + 1
+    if idxFiltroEye > #niveisFiltroEye then idxFiltroEye = 1 end
+    targetRarityName = niveisFiltroEye[idxFiltroEye]
+    btnEyeFiltro.Text = "Filtro: " .. targetRarityName
+end)
+
+btnEyeToggle.MouseButton1Click:Connect(function()
+    espOvosAtivo = not espOvosAtivo
+    if espOvosAtivo then
+        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
+        btnEyeToggle.TextColor3 = VERDE
+        Toast("ESP ON", VERDE)
+    else
+        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
+        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
+        Toast("ESP OFF", AMARELO)
+    end
+end)
+
+-- Scroll dos cards
 local scrollEye = Instance.new("ScrollingFrame")
 scrollEye.Name = "ScrollEye"
-scrollEye.Size = UDim2.new(1, 0, 1, -22)
-scrollEye.Position = UDim2.new(0, 0, 0, 18)
+scrollEye.Size = UDim2.new(1, 0, 1, -84)
+scrollEye.Position = UDim2.new(0, 0, 0, 78)
 scrollEye.BackgroundTransparency = 1
 scrollEye.BorderSizePixel = 0
 scrollEye.ScrollBarThickness = 4
@@ -1240,7 +1295,6 @@ local function atualizarListaEye(records)
 
         Instance.new("UICorner", barra).CornerRadius = UDim.new(0, 2)
 
-        -- Imagem
         local imgFrame = Instance.new("Frame")
         imgFrame.Size             = UDim2.new(0, 48, 0, 48)
         imgFrame.Position         = UDim2.new(0, 12, 0, 8)
@@ -1264,7 +1318,6 @@ local function atualizarListaEye(records)
         img.Image             = rec.icon or ""
         img.Parent            = imgFrame
 
-        -- Nome
         local nameL = Instance.new("TextLabel")
         nameL.Size              = UDim2.new(1, -80, 0, 14)
         nameL.Position          = UDim2.new(0, 66, 0, 6)
@@ -1277,7 +1330,6 @@ local function atualizarListaEye(records)
         nameL.TextTruncate      = Enum.TextTruncate.AtEnd
         nameL.Parent            = card
 
-        -- Raridade
         local rarL = Instance.new("TextLabel")
         rarL.Size              = UDim2.new(1, -80, 0, 12)
         rarL.Position          = UDim2.new(0, 66, 0, 20)
@@ -1289,7 +1341,6 @@ local function atualizarListaEye(records)
         rarL.TextXAlignment    = Enum.TextXAlignment.Left
         rarL.Parent            = card
 
-        -- Distância
         local distL = Instance.new("TextLabel")
         distL.Size              = UDim2.new(1, -80, 0, 12)
         distL.Position          = UDim2.new(0, 66, 0, 32)
@@ -1301,7 +1352,6 @@ local function atualizarListaEye(records)
         distL.TextXAlignment    = Enum.TextXAlignment.Left
         distL.Parent            = card
 
-        -- Badge "MAIS PRÓXIMO"
         if i == 1 then
             local badge = Instance.new("TextLabel")
             badge.Size              = UDim2.new(0, 56, 0, 12)
@@ -1573,8 +1623,12 @@ btnESP.MouseButton1Click:Connect(function()
     espOvosAtivo = not espOvosAtivo
     if espOvosAtivo then
         Toast("ESP ON", VERDE)
+        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
+        btnEyeToggle.TextColor3 = VERDE
     else
         Toast("ESP OFF", AMARELO)
+        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
+        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
     end
 end)
 
@@ -1649,7 +1703,6 @@ end)
 
 task.spawn(function()
     while gui.Parent do
-        -- ESP button color
         if espOvosAtivo then
             contESP.BackgroundColor3       = Color3.fromRGB(20, 55, 28)
             barraESP.BackgroundColor3      = VERDE
