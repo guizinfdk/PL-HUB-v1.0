@@ -10,20 +10,14 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
 local Camera      = Workspace.CurrentCamera
 
--- [M1]  velocidade plausível (não teleporte)
--- [M2]  distância de chegada maior
--- [M3]  clamp do dt
--- [M11] walk/jump alinhados com o passo
-local VELOCIDADE_RUN    = 450
-local DISTANCIA_CHEGADA = 10
+local VELOCIDADE_RUN    = 3e15
+local DISTANCIA_CHEGADA = 4
 local IGNORAR_EIXO_Y    = true
-local WALK_TEMP         = math.min(VELOCIDADE_RUN, 200)
-local JUMP_TEMP         = math.floor(WALK_TEMP * 0.6)
+local WALK_TEMP         = 850
+local JUMP_TEMP         = 240
 local DURACAO_TRAVA     = 0.6
 local CLONE_SO_PRA_MIM  = true
 local NOME_SMART        = "SmartPromptPart"
-local RAMP_TP           = 0.5
-local DT_MAX            = 1/30
 
 local AntiKB    = true
 local DEBUG_KB  = false
@@ -88,18 +82,9 @@ local RARITY_COLOR = {
 local Teleporte = {
     conn = nil, ativo = false, char = nil, hum = nil, root = nil,
     walkOrig = nil, jumpOrig = nil,
-    bindName = "PLHub_TP_Move",
-    tRamp    = 0,
-    rayParams = nil,
 }
 
 function Teleporte.refs()
-    -- [M6] cache: só revalida se algum ref morreu
-    if Teleporte.char and Teleporte.char.Parent
-       and Teleporte.hum and Teleporte.hum.Parent
-       and Teleporte.root and Teleporte.root.Parent then
-        return true
-    end
     Teleporte.char = LocalPlayer.Character
     if not Teleporte.char then return false end
     Teleporte.hum  = Teleporte.char:FindFirstChildOfClass("Humanoid")
@@ -133,139 +118,65 @@ function Teleporte.pegarAlvo()
 end
 
 function Teleporte.parar()
-    -- [M15] unbind do render step
-    pcall(function()
-        RunService:UnbindFromRenderStep(Teleporte.bindName)
-    end)
-    Teleporte.conn = nil
-    if Teleporte.hum and Teleporte.hum.Parent then
-        if Teleporte.walkOrig then
-            pcall(function() Teleporte.hum.WalkSpeed = Teleporte.walkOrig end)
-        end
-        if Teleporte.jumpOrig then
-            pcall(function() Teleporte.hum.JumpPower = Teleporte.jumpOrig end)
-        end
+    if Teleporte.conn then
+        Teleporte.conn:Disconnect()
+        Teleporte.conn = nil
+    end
+    if Teleporte.hum then
+        if Teleporte.walkOrig then Teleporte.hum.WalkSpeed = Teleporte.walkOrig end
+        if Teleporte.jumpOrig then Teleporte.hum.JumpPower = Teleporte.jumpOrig end
     end
     Teleporte.walkOrig = nil
     Teleporte.jumpOrig = nil
-    Teleporte.tRamp    = 0
     Teleporte.ativo    = false
 end
 
--- [M8] raycast de colisão
-local function construirRayParams()
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    local filtro = {}
-    if LocalPlayer.Character then table.insert(filtro, LocalPlayer.Character) end
-    if Disfarce and Disfarce.clone then table.insert(filtro, Disfarce.clone) end
-    if espFolder then table.insert(filtro, espFolder) end
-    params.FilterDescendantsInstances = filtro
-    params.IgnoreWater = true
-    return params
-end
-
 function Teleporte.iniciar()
-    -- [M10] se já ativo, cancela (toggle seguro)
     if Teleporte.ativo then Teleporte.parar() return end
     if not Teleporte.refs() then return end
     local alvo = Teleporte.pegarAlvo()
     if not alvo then return end
-
     Teleporte.walkOrig = Teleporte.hum.WalkSpeed
     Teleporte.jumpOrig = Teleporte.hum.JumpPower
+    Teleporte.hum.WalkSpeed = WALK_TEMP
+    Teleporte.hum.JumpPower = JUMP_TEMP
+    Teleporte.ativo = true
 
-    -- [M11] WalkSpeed alinhado com a velocidade real do passo
-    pcall(function() Teleporte.hum.WalkSpeed = WALK_TEMP end)
-    pcall(function() Teleporte.hum.JumpPower = JUMP_TEMP end)
-
-    Teleporte.ativo  = true
-    Teleporte.tRamp  = 0
-    Teleporte.rayParams = construirRayParams()
-
-    -- [M15] BindToRenderStep em vez de Heartbeat
-    RunService:BindToRenderStep(
-        Teleporte.bindName,
-        Enum.RenderPriority.Character.Value + 1,
-        function(dt)
-            if not Teleporte.ativo then return end
-            if not Teleporte.refs() then Teleporte.parar() return end
-
-            -- [M3] clamp do dt
-            dt = math.min(dt, DT_MAX)
-
-            -- [M12] ramp de velocidade
-            Teleporte.tRamp = math.min(Teleporte.tRamp + dt / RAMP_TP, 1)
-            local velAtual = VELOCIDADE_RUN * Teleporte.tRamp
-
-            local origem = Teleporte.root.Position
-            local delta  = alvo - origem
-            if IGNORAR_EIXO_Y then delta = Vector3.new(delta.X, 0, delta.Z) end
-            local dist = delta.Magnitude
-
-            if dist <= DISTANCIA_CHEGADA then
-                Teleporte.root.CFrame = CFrame.new(alvo)
-                    * (Teleporte.root.CFrame - Teleporte.root.CFrame.Position)
-                Teleporte.root.AssemblyLinearVelocity  = Vector3.zero
-                Teleporte.root.AssemblyAngularVelocity = Vector3.zero
-                Teleporte.parar()
-                return
-            end
-
-            -- [M7] direção horizontal pro lookAt
-            local direcao = (dist > 0) and delta.Unit or Teleporte.root.CFrame.LookVector
-            local olhar = Vector3.new(direcao.X, 0, direcao.Z)
-            if olhar.Magnitude > 0 then olhar = olhar.Unit else olhar = direcao end
-
-            local passo = math.min(velAtual * dt, dist)
-
-            -- [M8] raycast de colisão
-            local ray = Workspace:Raycast(origem, direcao * passo, Teleporte.rayParams)
-            if ray then
-                passo = math.max(0, (ray.Position - origem).Magnitude - 1)
-                if passo <= 0.05 then
-                    return -- bloqueado, espera próximo frame
-                end
-            end
-
-            local novaPos = origem + direcao * passo
-            Teleporte.root.CFrame = CFrame.lookAt(novaPos, novaPos + olhar)
-
-            -- [M2] velocidade real em vez de zero
-            local velReal = direcao * (passo / dt)
-            if velReal.Magnitude > VELOCIDADE_RUN then
-                velReal = velReal.Unit * VELOCIDADE_RUN
-            end
-            Teleporte.root.AssemblyLinearVelocity  = velReal
+    Teleporte.conn = RunService.Heartbeat:Connect(function(dt)
+        if not Teleporte.ativo then return end
+        if not Teleporte.refs() then Teleporte.parar() return end
+        local origem = Teleporte.root.Position
+        local delta  = alvo - origem
+        if IGNORAR_EIXO_Y then delta = Vector3.new(delta.X, 0, delta.Z) end
+        local dist = delta.Magnitude
+        if dist <= DISTANCIA_CHEGADA then
+            Teleporte.root.CFrame = CFrame.new(alvo)
+                * (Teleporte.root.CFrame - Teleporte.root.CFrame.Position)
+            Teleporte.root.AssemblyLinearVelocity  = Vector3.zero
             Teleporte.root.AssemblyAngularVelocity = Vector3.zero
+            Teleporte.parar()
+            return
         end
-    )
+        local direcao = (dist > 0) and delta.Unit or Teleporte.root.CFrame.LookVector
+        local passo   = math.min(VELOCIDADE_RUN * dt, dist)
+        local novaPos = origem + direcao * passo
+        Teleporte.root.CFrame = CFrame.lookAt(novaPos, novaPos + direcao)
+        Teleporte.root.AssemblyLinearVelocity  = Vector3.zero
+        Teleporte.root.AssemblyAngularVelocity = Vector3.zero
+    end)
 end
 
 -- DISFARCE
-local Disfarce = {
-    ativo = false, clone = nil, connCam = nil,
-    thread = nil, timeout = nil, camSubjectOrig = nil,
-}
+local Disfarce = { ativo = false, clone = nil, connCam = nil, thread = nil }
 
 function Disfarce.limpar()
     Disfarce.ativo = false
     if Disfarce.connCam then Disfarce.connCam:Disconnect() Disfarce.connCam = nil end
-    -- [M4] cancela timeout de segurança
-    if Disfarce.timeout then
-        pcall(task.cancel, Disfarce.timeout)
-        Disfarce.timeout = nil
-    end
     local t = Disfarce.thread
     Disfarce.thread = nil
     if t then pcall(task.cancel, t) end
     if Disfarce.clone then Disfarce.clone:Destroy() Disfarce.clone = nil end
     Camera.CameraType = Enum.CameraType.Custom
-    -- [M13] restaura CameraSubject
-    if Disfarce.camSubjectOrig then
-        pcall(function() Camera.CameraSubject = Disfarce.camSubjectOrig end)
-        Disfarce.camSubjectOrig = nil
-    end
 end
 
 function Disfarce.iniciar()
@@ -275,8 +186,6 @@ function Disfarce.iniciar()
     if not char:FindFirstChild("HumanoidRootPart") then return end
     Disfarce.ativo = true
     local cframeSalvo = Camera.CFrame
-    -- [M13] salva CameraSubject original
-    Disfarce.camSubjectOrig = Camera.CameraSubject
     Camera.CameraType = Enum.CameraType.Scriptable
     Camera.CFrame = cframeSalvo
 
@@ -284,7 +193,6 @@ function Disfarce.iniciar()
         if Disfarce.ativo then Camera.CFrame = cframeSalvo end
     end)
 
-    -- ⚠️ ITEM 4 INTOCADO: clone do personagem permanece exatamente igual
     if CLONE_SO_PRA_MIM and char.Parent then
         local eraArch = char.Archivable
         char.Archivable = true
@@ -318,15 +226,6 @@ function Disfarce.iniciar()
     Disfarce.thread = task.delay(DURACAO_TRAVA, function()
         Disfarce.thread = nil
         Disfarce.limpar()
-    end)
-
-    -- [M4] timeout de segurança caso algo falhe
-    Disfarce.timeout = task.delay(DURACAO_TRAVA + 2, function()
-        Disfarce.timeout = nil
-        if Disfarce.ativo then
-            warn("[Disfarce] timeout de segurança acionado, limpando")
-            Disfarce.limpar()
-        end
     end)
 end
 
@@ -401,7 +300,6 @@ end
 
 RunService.Heartbeat:Connect(function()
     if not AntiKB then return end
-    if Teleporte.ativo then return end   -- [M14] não grava posição durante TP
     local char, hum, hrp
     pcall(function()
         char = LocalPlayer.Character
@@ -422,8 +320,6 @@ task.spawn(function()
             task.wait(0.1)
         else
             pcall(function()
-                -- [M14] teleporte tem prioridade
-                if Teleporte.ativo then return end
                 local char = LocalPlayer.Character
                 if not char then return end
                 local hum = char:FindFirstChildOfClass("Humanoid")
@@ -597,14 +493,6 @@ ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
     if not armado then return end
     if player ~= LocalPlayer then return end
     if not ehSmartPrompt(prompt) then return end
-    -- [M9] valida distância real
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    local pPart = prompt.Parent
-    if pPart and pPart:IsA("BasePart") then
-        if (pPart.Position - hrp.Position).Magnitude > 60 then return end
-    end
     Teleporte.iniciar()
     Disfarce.iniciar()
 end)
@@ -612,10 +500,6 @@ end)
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if Teleporte.ativo then Teleporte.parar() end
-    -- [M15] garante unbind mesmo se algo falhou
-    pcall(function()
-        RunService:UnbindFromRenderStep(Teleporte.bindName)
-    end)
     Disfarce.limpar()
     ultimaPosKB = nil
     Teleporte.refs()
