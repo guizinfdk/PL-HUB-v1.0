@@ -14,7 +14,7 @@ local VELOCIDADE_RUN    = 1e15
 local DISTANCIA_CHEGADA = 4
 local IGNORAR_EIXO_Y    = true
 local WALK_TEMP         = 850
-local JUMP_TEMP         = 240
+local JUMP_TEMP         = 120
 local DURACAO_TRAVA     = 0.6
 local CLONE_SO_PRA_MIM  = true
 local NOME_SMART        = "SmartPromptPart"
@@ -167,7 +167,7 @@ function Teleporte.iniciar()
 end
 
 -- ============================================================
--- [MODIFICADO] DISFARCE — Sistema de Clone Refatorado
+-- DISFARCE — Sistema de Clone Refatorado
 -- ============================================================
 local Disfarce = {
     ativo          = false,
@@ -181,30 +181,25 @@ local Disfarce = {
     estavaJump     = nil,
 }
 
--- Cria um clone "seguro" (sem Humanoid, sem scripts, sem detecção óbvia)
 local function criarCloneSeguro(char)
     local eraArch = char.Archivable
     char.Archivable = true
     local ok, resultado = pcall(function() return char:Clone() end)
-    char.Archivable = eraArch  -- restaura SEMPRE, mesmo se falhar
+    char.Archivable = eraArch
 
     if not ok or not resultado then return nil end
 
-    -- Nome neutro (mesmo nome do player, sem prefixo suspeito)
     resultado.Name = LocalPlayer.Name
 
-    -- Remove Scripts/LocalScripts
     for _, d in ipairs(resultado:GetDescendants()) do
         if d:IsA("Script") or d:IsA("LocalScript") then
             d:Destroy()
         end
     end
 
-    -- Remove Humanoid (evita ragdoll, physics, detecção)
     local h = resultado:FindFirstChildOfClass("Humanoid")
     if h then h:Destroy() end
 
-    -- Remove Animator, Animate, etc.
     for _, d in ipairs(resultado:GetDescendants()) do
         if d:IsA("Animator") or d.Name == "Animate"
            or d.Name == "Health" or d.Name == "Sound" then
@@ -212,13 +207,12 @@ local function criarCloneSeguro(char)
         end
     end
 
-    -- Configura partes
     for _, p in ipairs(resultado:GetDescendants()) do
         if p:IsA("BasePart") then
             p.Anchored     = true
             p.CanCollide   = false
-            p.CanTouch     = true    -- mantém: existimos para toques
-            p.CanQuery     = true    -- mantém: existimos para raycasts
+            p.CanTouch     = true
+            p.CanQuery     = true
         end
     end
 
@@ -239,7 +233,6 @@ function Disfarce.limpar()
         Disfarce.connCam = nil
     end
 
-    -- Restaura HRP real (move para onde o clone estava)
     if Disfarce.hrpReal and Disfarce.hrpReal.Parent then
         if Disfarce.clone and Disfarce.clone:FindFirstChild("HumanoidRootPart") then
             pcall(function()
@@ -249,7 +242,6 @@ function Disfarce.limpar()
         Disfarce.hrpReal.Anchored = Disfarce.estavaAnchored
     end
 
-    -- Restaura WalkSpeed/JumpPower
     if Disfarce.char and Disfarce.char.Parent then
         local hum = Disfarce.char:FindFirstChildOfClass("Humanoid")
         if hum then
@@ -293,12 +285,10 @@ function Disfarce.iniciar()
     Disfarce.estavaWalk     = hum.WalkSpeed
     Disfarce.estavaJump     = hum.JumpPower
 
-    -- Trava o player real
     hrp.Anchored = true
     pcall(function() hum.WalkSpeed = 0 end)
     pcall(function() hum.JumpPower = 0 end)
 
-    -- Câmera: segue o clone (mais natural que travar num frame)
     Camera.CameraType = Enum.CameraType.Scriptable
     Disfarce.connCam = RunService.RenderStepped:Connect(function()
         if not Disfarce.ativo then return end
@@ -314,7 +304,6 @@ function Disfarce.iniciar()
         end
     end)
 
-    -- Cria o clone seguro
     if CLONE_SO_PRA_MIM then
         local clone = criarCloneSeguro(char)
         if clone then
@@ -329,7 +318,6 @@ function Disfarce.iniciar()
     end)
 end
 
--- Auto-limpeza: se o char morrer/remover durante o disfarce
 LocalPlayer.CharacterRemoving:Connect(function()
     Disfarce.limpar()
 end)
@@ -346,9 +334,6 @@ task.spawn(function()
         end
     end
 end)
--- ============================================================
--- [FIM DA MODIFICAÇÃO]
--- ============================================================
 
 -- ANTI-TRAP
 local AntiTrap = { ativo = false, thread = nil }
@@ -577,8 +562,8 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
         warn("[TP-AREA] Área 'Forest' não encontrada no GuardAreas.")
     end
 
-    if setStatus then setStatus("Aguardando 3 segundos...", Color3.fromRGB(255, 200, 0)) end
-    task.wait(3)
+    if setStatus then setStatus("Aguardando 2 segundos...", Color3.fromRGB(255, 200, 0)) end
+    task.wait(2)
 
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if setStatus then setStatus("Personagem morreu ou resetou.", Color3.fromRGB(255, 100, 100)) end
