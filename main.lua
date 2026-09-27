@@ -562,8 +562,8 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
         warn("[TP-AREA] Área 'Forest' não encontrada no GuardAreas.")
     end
 
-    if setStatus then setStatus("Aguardando 2 segundos...", Color3.fromRGB(255, 200, 0)) end
-    task.wait(2)
+    if setStatus then setStatus("Aguardando 2.5 segundos...", Color3.fromRGB(255, 200, 0)) end
+    task.wait(2.5)
 
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if setStatus then setStatus("Personagem morreu ou resetou.", Color3.fromRGB(255, 100, 100)) end
