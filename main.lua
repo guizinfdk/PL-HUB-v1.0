@@ -10,10 +10,10 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
 local Camera      = Workspace.CurrentCamera
 
-local VELOCIDADE_RUN    = 3e15
+local VELOCIDADE_RUN    = 2e15
 local DISTANCIA_CHEGADA = 4
 local IGNORAR_EIXO_Y    = true
-local WALK_TEMP         = 850
+local WALK_TEMP         = 1000
 local JUMP_TEMP         = 240
 local DURACAO_TRAVA     = 0.6
 local CLONE_SO_PRA_MIM  = true
@@ -166,68 +166,189 @@ function Teleporte.iniciar()
     end)
 end
 
--- DISFARCE
-local Disfarce = { ativo = false, clone = nil, connCam = nil, thread = nil }
+-- ============================================================
+-- [MODIFICADO] DISFARCE — Sistema de Clone Refatorado
+-- ============================================================
+local Disfarce = {
+    ativo          = false,
+    clone          = nil,
+    connCam        = nil,
+    timerThread    = nil,
+    hrpReal        = nil,
+    posOrig        = nil,
+    estavaAnchored = false,
+    estavaWalk     = nil,
+    estavaJump     = nil,
+}
+
+-- Cria um clone "seguro" (sem Humanoid, sem scripts, sem detecção óbvia)
+local function criarCloneSeguro(char)
+    local eraArch = char.Archivable
+    char.Archivable = true
+    local ok, resultado = pcall(function() return char:Clone() end)
+    char.Archivable = eraArch  -- restaura SEMPRE, mesmo se falhar
+
+    if not ok or not resultado then return nil end
+
+    -- Nome neutro (mesmo nome do player, sem prefixo suspeito)
+    resultado.Name = LocalPlayer.Name
+
+    -- Remove Scripts/LocalScripts
+    for _, d in ipairs(resultado:GetDescendants()) do
+        if d:IsA("Script") or d:IsA("LocalScript") then
+            d:Destroy()
+        end
+    end
+
+    -- Remove Humanoid (evita ragdoll, physics, detecção)
+    local h = resultado:FindFirstChildOfClass("Humanoid")
+    if h then h:Destroy() end
+
+    -- Remove Animator, Animate, etc.
+    for _, d in ipairs(resultado:GetDescendants()) do
+        if d:IsA("Animator") or d.Name == "Animate"
+           or d.Name == "Health" or d.Name == "Sound" then
+            d:Destroy()
+        end
+    end
+
+    -- Configura partes
+    for _, p in ipairs(resultado:GetDescendants()) do
+        if p:IsA("BasePart") then
+            p.Anchored     = true
+            p.CanCollide   = false
+            p.CanTouch     = true    -- mantém: existimos para toques
+            p.CanQuery     = true    -- mantém: existimos para raycasts
+        end
+    end
+
+    return resultado
+end
 
 function Disfarce.limpar()
+    if not Disfarce.ativo then return end
     Disfarce.ativo = false
-    if Disfarce.connCam then Disfarce.connCam:Disconnect() Disfarce.connCam = nil end
-    local t = Disfarce.thread
-    Disfarce.thread = nil
-    if t then pcall(task.cancel, t) end
-    if Disfarce.clone then Disfarce.clone:Destroy() Disfarce.clone = nil end
+
+    if Disfarce.timerThread then
+        pcall(task.cancel, Disfarce.timerThread)
+        Disfarce.timerThread = nil
+    end
+
+    if Disfarce.connCam then
+        Disfarce.connCam:Disconnect()
+        Disfarce.connCam = nil
+    end
+
+    -- Restaura HRP real (move para onde o clone estava)
+    if Disfarce.hrpReal and Disfarce.hrpReal.Parent then
+        if Disfarce.clone and Disfarce.clone:FindFirstChild("HumanoidRootPart") then
+            pcall(function()
+                Disfarce.hrpReal.CFrame = Disfarce.clone.HumanoidRootPart.CFrame
+            end)
+        end
+        Disfarce.hrpReal.Anchored = Disfarce.estavaAnchored
+    end
+
+    -- Restaura WalkSpeed/JumpPower
+    if Disfarce.char and Disfarce.char.Parent then
+        local hum = Disfarce.char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            if Disfarce.estavaWalk then
+                pcall(function() hum.WalkSpeed = Disfarce.estavaWalk end)
+            end
+            if Disfarce.estavaJump then
+                pcall(function() hum.JumpPower = Disfarce.estavaJump end)
+            end
+        end
+    end
+
+    Disfarce.hrpReal        = nil
+    Disfarce.posOrig        = nil
+    Disfarce.estavaWalk     = nil
+    Disfarce.estavaJump     = nil
+
+    if Disfarce.clone then
+        Disfarce.clone:Destroy()
+        Disfarce.clone = nil
+    end
+
     Camera.CameraType = Enum.CameraType.Custom
 end
 
 function Disfarce.iniciar()
     if Disfarce.ativo then Disfarce.limpar() return end
+
     local char = LocalPlayer.Character
     if not char then return end
-    if not char:FindFirstChild("HumanoidRootPart") then return end
-    Disfarce.ativo = true
-    local cframeSalvo = Camera.CFrame
-    Camera.CameraType = Enum.CameraType.Scriptable
-    Camera.CFrame = cframeSalvo
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum then return end
 
+    Disfarce.ativo          = true
+    Disfarce.char           = char
+    Disfarce.hrpReal        = hrp
+    Disfarce.posOrig        = hrp.CFrame
+    Disfarce.estavaAnchored = hrp.Anchored
+    Disfarce.estavaWalk     = hum.WalkSpeed
+    Disfarce.estavaJump     = hum.JumpPower
+
+    -- Trava o player real
+    hrp.Anchored = true
+    pcall(function() hum.WalkSpeed = 0 end)
+    pcall(function() hum.JumpPower = 0 end)
+
+    -- Câmera: segue o clone (mais natural que travar num frame)
+    Camera.CameraType = Enum.CameraType.Scriptable
     Disfarce.connCam = RunService.RenderStepped:Connect(function()
-        if Disfarce.ativo then Camera.CFrame = cframeSalvo end
+        if not Disfarce.ativo then return end
+        local alvoPart = Disfarce.clone and Disfarce.clone:FindFirstChild("HumanoidRootPart")
+        if alvoPart then
+            local base = alvoPart.Position
+            Camera.CFrame = CFrame.new(
+                base + Vector3.new(0, 4, 10),
+                base + Vector3.new(0, 1, 0)
+            )
+        else
+            Camera.CFrame = Disfarce.posOrig
+        end
     end)
 
-    if CLONE_SO_PRA_MIM and char.Parent then
-        local eraArch = char.Archivable
-        char.Archivable = true
-        local ok, resultado = pcall(function() return char:Clone() end)
-        if ok and resultado then
-            resultado.Name = "CloneLocal_" .. LocalPlayer.Name
-            for _, d in ipairs(resultado:GetDescendants()) do
-                if d:IsA("Script") or d:IsA("LocalScript") then d:Destroy() end
-            end
-            local h = resultado:FindFirstChildOfClass("Humanoid")
-            if h then
-                h.WalkSpeed = 0
-                h.JumpPower = 0
-                h.PlatformStand = true
-                h.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-            end
-            for _, p in ipairs(resultado:GetDescendants()) do
-                if p:IsA("BasePart") then
-                    p.Anchored = true
-                    p.CanCollide = false
-                    p.CanTouch = false
-                    p.CanQuery = false
-                end
-            end
-            resultado.Parent = Workspace
-            Disfarce.clone = resultado
+    -- Cria o clone seguro
+    if CLONE_SO_PRA_MIM then
+        local clone = criarCloneSeguro(char)
+        if clone then
+            clone.Parent   = Workspace
+            Disfarce.clone = clone
         end
-        char.Archivable = eraArch
     end
 
-    Disfarce.thread = task.delay(DURACAO_TRAVA, function()
-        Disfarce.thread = nil
+    Disfarce.timerThread = task.delay(DURACAO_TRAVA, function()
+        Disfarce.timerThread = nil
         Disfarce.limpar()
     end)
 end
+
+-- Auto-limpeza: se o char morrer/remover durante o disfarce
+LocalPlayer.CharacterRemoving:Connect(function()
+    Disfarce.limpar()
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if Disfarce.ativo then
+            local char = LocalPlayer.Character
+            local hum  = char and char:FindFirstChildOfClass("Humanoid")
+            if not hum or hum.Health <= 0 then
+                Disfarce.limpar()
+            end
+        end
+    end
+end)
+-- ============================================================
+-- [FIM DA MODIFICAÇÃO]
+-- ============================================================
 
 -- ANTI-TRAP
 local AntiTrap = { ativo = false, thread = nil }
