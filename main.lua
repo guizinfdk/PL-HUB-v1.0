@@ -10,10 +10,10 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
 local Camera      = Workspace.CurrentCamera
 
-local VELOCIDADE_RUN    = 1e75
-local DISTANCIA_CHEGADA = 4
+local VELOCIDADE_RUN    = 1e95
+local DISTANCIA_CHEGADA = 50
 local IGNORAR_EIXO_Y    = true
-local WALK_TEMP         = 595
+local WALK_TEMP         = 700
 local JUMP_TEMP         = 260
 local DURACAO_TRAVA     = 0.6
 local CLONE_SO_PRA_MIM  = true
