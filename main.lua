@@ -518,11 +518,6 @@ local AZUL      = Color3.fromRGB(80, 180, 255)
 local BG        = Color3.fromRGB(14, 12, 22)
 local BG_BTN    = Color3.fromRGB(28, 22, 42)
 
--- Tamanhos ajustados pra caber no celular
-local LARGURA_PAINEL  = 210
-local ALTURA_PAINEL   = 260
-local ALTURA_MIN      = 32
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "PLHubGui"
 gui.ResetOnSpawn = false
@@ -531,8 +526,8 @@ gui.Parent = PlayerGui
 -- Toast
 local toastContainer = Instance.new("Frame")
 toastContainer.Name = "Toasts"
-toastContainer.Size = UDim2.new(0, 260, 1, 0)
-toastContainer.Position = UDim2.new(0.5, -130, 0, 0)
+toastContainer.Size = UDim2.new(0, 300, 1, 0)
+toastContainer.Position = UDim2.new(0.5, -150, 0, 0)
 toastContainer.BackgroundTransparency = 1
 toastContainer.ZIndex = 100
 toastContainer.Parent = gui
@@ -544,18 +539,18 @@ toastLayout.SortOrder = Enum.SortOrder.LayoutOrder
 toastLayout.Parent = toastContainer
 
 local toastPad = Instance.new("UIPadding")
-toastPad.PaddingTop = UDim.new(0, 16)
+toastPad.PaddingTop = UDim.new(0, 20)
 toastPad.Parent = toastContainer
 
 function Toast(msg, cor)
     cor = cor or Color3.fromRGB(200, 200, 220)
     local t = Instance.new("TextLabel")
-    t.Size = UDim2.new(1, -16, 0, 26)
+    t.Size = UDim2.new(1, -20, 0, 30)
     t.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
     t.BackgroundTransparency = 0.15
     t.BorderSizePixel = 0
     t.Font = Enum.Font.GothamBold
-    t.TextSize = 11
+    t.TextSize = 12
     t.TextColor3 = cor
     t.Text = msg
     t.ZIndex = 101
@@ -583,8 +578,8 @@ end
 -- Holder
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
-holder.Size = UDim2.new(0, LARGURA_PAINEL, 0, ALTURA_PAINEL)
-holder.Position = UDim2.new(0.5, -LARGURA_PAINEL/2, 0.08, 0)
+holder.Size = UDim2.new(0, 200, 0, 220)
+holder.Position = UDim2.new(0.5, -100, 0.1, 0)
 holder.BackgroundTransparency = 1
 holder.Active = true
 holder.Draggable = true
@@ -598,7 +593,7 @@ bordaGradiente.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 bordaGradiente.BorderSizePixel = 0
 bordaGradiente.ZIndex = 1
 bordaGradiente.Parent = holder
-Instance.new("UICorner", bordaGradiente).CornerRadius = UDim.new(0, 12)
+Instance.new("UICorner", bordaGradiente).CornerRadius = UDim.new(0, 14)
 
 local gradBorda = Instance.new("UIGradient")
 gradBorda.Color = ColorSequence.new({
@@ -616,18 +611,18 @@ menu.BackgroundColor3 = BG
 menu.BorderSizePixel = 0
 menu.ZIndex = 2
 menu.Parent = holder
-Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 10)
+Instance.new("UICorner", menu).CornerRadius = UDim.new(0, 12)
 
 -- Header
 local header = Instance.new("Frame")
-header.Size = UDim2.new(1, 0, 0, 28)
+header.Size = UDim2.new(1, 0, 0, 32)
 header.BackgroundTransparency = 1
 header.ZIndex = 3
 header.Parent = menu
 
 local ledHeader = Instance.new("Frame")
-ledHeader.Size = UDim2.new(0, 5, 0, 5)
-ledHeader.Position = UDim2.new(0, 8, 0, 11)
+ledHeader.Size = UDim2.new(0, 6, 0, 6)
+ledHeader.Position = UDim2.new(0, 10, 0, 13)
 ledHeader.BackgroundColor3 = VERMELHO
 ledHeader.BorderSizePixel = 0
 ledHeader.ZIndex = 4
@@ -635,11 +630,11 @@ ledHeader.Parent = header
 Instance.new("UICorner", ledHeader).CornerRadius = UDim.new(1, 0)
 
 local titulo = Instance.new("TextLabel")
-titulo.Size = UDim2.new(1, -50, 0, 12)
-titulo.Position = UDim2.new(0, 18, 0, 3)
+titulo.Size = UDim2.new(1, -60, 0, 14)
+titulo.Position = UDim2.new(0, 22, 0, 4)
 titulo.BackgroundTransparency = 1
 titulo.Font = Enum.Font.GothamBold
-titulo.TextSize = 11
+titulo.TextSize = 12
 titulo.TextColor3 = Color3.fromRGB(240, 230, 255)
 titulo.TextXAlignment = Enum.TextXAlignment.Left
 titulo.Text = "PL HUB"
@@ -647,11 +642,11 @@ titulo.ZIndex = 4
 titulo.Parent = header
 
 local subtitulo = Instance.new("TextLabel")
-subtitulo.Size = UDim2.new(1, -50, 0, 9)
-subtitulo.Position = UDim2.new(0, 18, 0, 15)
+subtitulo.Size = UDim2.new(1, -60, 0, 10)
+subtitulo.Position = UDim2.new(0, 22, 0, 18)
 subtitulo.BackgroundTransparency = 1
 subtitulo.Font = Enum.Font.Gotham
-subtitulo.TextSize = 7
+subtitulo.TextSize = 8
 subtitulo.TextColor3 = Color3.fromRGB(170, 150, 210)
 subtitulo.TextXAlignment = Enum.TextXAlignment.Left
 subtitulo.Text = "IB: @caligsc"
@@ -659,11 +654,11 @@ subtitulo.ZIndex = 4
 subtitulo.Parent = header
 
 local btnMin = Instance.new("TextButton")
-btnMin.Size = UDim2.new(0, 16, 0, 16)
-btnMin.Position = UDim2.new(1, -38, 0, 6)
+btnMin.Size = UDim2.new(0, 18, 0, 18)
+btnMin.Position = UDim2.new(1, -44, 0, 7)
 btnMin.BackgroundTransparency = 1
 btnMin.Font = Enum.Font.GothamBold
-btnMin.TextSize = 13
+btnMin.TextSize = 14
 btnMin.TextColor3 = Color3.fromRGB(200, 180, 220)
 btnMin.Text = "—"
 btnMin.ZIndex = 5
@@ -672,11 +667,11 @@ btnMin.MouseEnter:Connect(function() btnMin.TextColor3 = ROXO end)
 btnMin.MouseLeave:Connect(function() btnMin.TextColor3 = Color3.fromRGB(200, 180, 220) end)
 
 local btnFechar = Instance.new("TextButton")
-btnFechar.Size = UDim2.new(0, 16, 0, 16)
-btnFechar.Position = UDim2.new(1, -20, 0, 6)
+btnFechar.Size = UDim2.new(0, 18, 0, 18)
+btnFechar.Position = UDim2.new(1, -22, 0, 7)
 btnFechar.BackgroundTransparency = 1
 btnFechar.Font = Enum.Font.GothamBold
-btnFechar.TextSize = 11
+btnFechar.TextSize = 12
 btnFechar.TextColor3 = Color3.fromRGB(200, 160, 200)
 btnFechar.Text = "✕"
 btnFechar.ZIndex = 5
@@ -686,8 +681,8 @@ btnFechar.MouseLeave:Connect(function() btnFechar.TextColor3 = Color3.fromRGB(20
 btnFechar.MouseButton1Click:Connect(function() holder.Visible = false end)
 
 local faixaTopo = Instance.new("Frame")
-faixaTopo.Size = UDim2.new(1, -14, 0, 2)
-faixaTopo.Position = UDim2.new(0, 7, 0, 30)
+faixaTopo.Size = UDim2.new(1, -16, 0, 2)
+faixaTopo.Position = UDim2.new(0, 8, 0, 34)
 faixaTopo.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 faixaTopo.BorderSizePixel = 0
 faixaTopo.ZIndex = 3
@@ -704,13 +699,13 @@ gradTopo.Parent = faixaTopo
 
 -- TabBar
 local tabBar = Instance.new("Frame")
-tabBar.Size = UDim2.new(1, -14, 0, 20)
-tabBar.Position = UDim2.new(0, 7, 0, 34)
+tabBar.Size = UDim2.new(1, -16, 0, 22)
+tabBar.Position = UDim2.new(0, 8, 0, 38)
 tabBar.BackgroundColor3 = BG_BTN
 tabBar.BorderSizePixel = 0
 tabBar.ZIndex = 3
 tabBar.Parent = menu
-Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 6)
 
 local tabLayout = Instance.new("UIListLayout")
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
@@ -726,13 +721,13 @@ local function criarTabBtn(texto, ordem)
     b.BackgroundColor3 = BG
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
-    b.TextSize = 12
+    b.TextSize = 13
     b.TextColor3 = Color3.fromRGB(200, 180, 220)
     b.Text = texto
     b.LayoutOrder = ordem
     b.ZIndex = 4
     b.Parent = tabBar
-    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 3)
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
     return b
 end
 
@@ -743,31 +738,31 @@ local btnTabEye   = criarTabBtn("👁️", 4)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
-containerFunc.Size = UDim2.new(1, 0, 1, -56)
-containerFunc.Position = UDim2.new(0, 0, 0, 56)
+containerFunc.Size = UDim2.new(1, 0, 1, -98)
+containerFunc.Position = UDim2.new(0, 0, 0, 64)
 containerFunc.BackgroundTransparency = 1
 containerFunc.ZIndex = 3
 containerFunc.Parent = menu
 
 local containerTps = Instance.new("Frame")
-containerTps.Size = UDim2.new(1, 0, 1, -56)
-containerTps.Position = UDim2.new(0, 0, 0, 56)
+containerTps.Size = UDim2.new(1, 0, 1, -98)
+containerTps.Position = UDim2.new(0, 0, 0, 64)
 containerTps.BackgroundTransparency = 1
 containerTps.ZIndex = 3
 containerTps.Visible = false
 containerTps.Parent = menu
 
 local containerSpeed = Instance.new("Frame")
-containerSpeed.Size = UDim2.new(1, 0, 1, -56)
-containerSpeed.Position = UDim2.new(0, 0, 0, 56)
+containerSpeed.Size = UDim2.new(1, 0, 1, -98)
+containerSpeed.Position = UDim2.new(0, 0, 0, 64)
 containerSpeed.BackgroundTransparency = 1
 containerSpeed.ZIndex = 3
 containerSpeed.Visible = false
 containerSpeed.Parent = menu
 
 local containerEye = Instance.new("Frame")
-containerEye.Size = UDim2.new(1, 0, 1, -56)
-containerEye.Position = UDim2.new(0, 0, 0, 56)
+containerEye.Size = UDim2.new(1, 0, 1, -98)
+containerEye.Position = UDim2.new(0, 0, 0, 64)
 containerEye.BackgroundTransparency = 1
 containerEye.ZIndex = 3
 containerEye.Visible = false
@@ -780,7 +775,7 @@ scroll.Size = UDim2.new(1, 0, 1, 0)
 scroll.Position = UDim2.new(0, 0, 0, 0)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
-scroll.ScrollBarThickness = 3
+scroll.ScrollBarThickness = 4
 scroll.ScrollBarImageColor3 = ROXO
 scroll.ScrollBarImageTransparency = 0.3
 scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -791,7 +786,7 @@ scroll.ZIndex = 3
 scroll.Parent = containerFunc
 
 local layout = Instance.new("UIListLayout")
-layout.Padding = UDim.new(0, 3)
+layout.Padding = UDim.new(0, 4)
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 layout.Parent = scroll
@@ -803,11 +798,11 @@ padScroll.Parent = scroll
 
 -- Scroll Áreas (aba TPs)
 local statusAreaLbl = Instance.new("TextLabel")
-statusAreaLbl.Size = UDim2.new(1, -14, 0, 12)
-statusAreaLbl.Position = UDim2.new(0, 7, 0, 0)
+statusAreaLbl.Size = UDim2.new(1, -16, 0, 14)
+statusAreaLbl.Position = UDim2.new(0, 8, 0, 0)
 statusAreaLbl.BackgroundTransparency = 1
 statusAreaLbl.Font = Enum.Font.Gotham
-statusAreaLbl.TextSize = 8
+statusAreaLbl.TextSize = 9
 statusAreaLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
 statusAreaLbl.TextXAlignment = Enum.TextXAlignment.Left
 statusAreaLbl.Text = "Selecione uma área..."
@@ -816,11 +811,11 @@ statusAreaLbl.Parent = containerTps
 
 local scrollAreas = Instance.new("ScrollingFrame")
 scrollAreas.Name = "ScrollAreas"
-scrollAreas.Size = UDim2.new(1, 0, 1, -46)
-scrollAreas.Position = UDim2.new(0, 0, 0, 16)
+scrollAreas.Size = UDim2.new(1, 0, 1, -52)
+scrollAreas.Position = UDim2.new(0, 0, 0, 18)
 scrollAreas.BackgroundTransparency = 1
 scrollAreas.BorderSizePixel = 0
-scrollAreas.ScrollBarThickness = 3
+scrollAreas.ScrollBarThickness = 4
 scrollAreas.ScrollBarImageColor3 = AZUL
 scrollAreas.ScrollBarImageTransparency = 0.3
 scrollAreas.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -843,17 +838,17 @@ padAreas.Parent = scrollAreas
 
 -- Botão TP-AREA
 local btnTpArea2 = Instance.new("TextButton")
-btnTpArea2.Size = UDim2.new(1, -14, 0, 26)
-btnTpArea2.Position = UDim2.new(0, 7, 1, -30)
+btnTpArea2.Size = UDim2.new(1, -16, 0, 28)
+btnTpArea2.Position = UDim2.new(0, 8, 1, -32)
 btnTpArea2.BackgroundColor3 = Color3.fromRGB(0, 150, 255)
 btnTpArea2.BorderSizePixel = 0
 btnTpArea2.Font = Enum.Font.GothamBold
-btnTpArea2.TextSize = 11
+btnTpArea2.TextSize = 12
 btnTpArea2.TextColor3 = Color3.fromRGB(255, 255, 255)
 btnTpArea2.Text = "🌪️TP-AREA"
 btnTpArea2.ZIndex = 4
 btnTpArea2.Parent = containerTps
-Instance.new("UICorner", btnTpArea2).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", btnTpArea2).CornerRadius = UDim.new(0, 7)
 
 -- Lista de áreas
 local AreaSelecionada = nil
@@ -890,11 +885,11 @@ local function popularAreas()
         if child:IsA("Model") or child:IsA("Folder") then
             i = i + 1
             local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, -6, 0, 20)
+            btn.Size = UDim2.new(1, -8, 0, 22)
             btn.BackgroundColor3 = BG_BTN
             btn.BorderSizePixel = 0
             btn.Font = Enum.Font.GothamBold
-            btn.TextSize = 9
+            btn.TextSize = 10
             btn.TextColor3 = Color3.fromRGB(230, 220, 255)
             btn.Text = child.Name
             btn.TextXAlignment = Enum.TextXAlignment.Left
@@ -930,18 +925,30 @@ local Speed = {
     Capturado   = false,
 }
 
+local speedStatus = Instance.new("TextLabel")
+speedStatus.Size = UDim2.new(1, -16, 0, 16)
+speedStatus.Position = UDim2.new(0, 8, 0, 0)
+speedStatus.BackgroundTransparency = 1
+speedStatus.Font = Enum.Font.GothamBold
+speedStatus.TextSize = 10
+speedStatus.TextColor3 = Color3.fromRGB(180, 220, 255)
+speedStatus.TextXAlignment = Enum.TextXAlignment.Left
+speedStatus.Text = "Speed: Inativo"
+speedStatus.ZIndex = 4
+speedStatus.Parent = containerSpeed
+
 local btnSpeedToggle = Instance.new("TextButton")
-btnSpeedToggle.Size = UDim2.new(1, -14, 0, 28)
-btnSpeedToggle.Position = UDim2.new(0, 7, 0, 16)
+btnSpeedToggle.Size = UDim2.new(1, -16, 0, 30)
+btnSpeedToggle.Position = UDim2.new(0, 8, 0, 22)
 btnSpeedToggle.BackgroundColor3 = BG_BTN
 btnSpeedToggle.BorderSizePixel = 0
 btnSpeedToggle.Font = Enum.Font.GothamBold
-btnSpeedToggle.TextSize = 11
+btnSpeedToggle.TextSize = 12
 btnSpeedToggle.TextColor3 = Color3.fromRGB(230, 220, 255)
 btnSpeedToggle.Text = "⚡ Speed: OFF"
 btnSpeedToggle.ZIndex = 4
 btnSpeedToggle.Parent = containerSpeed
-Instance.new("UICorner", btnSpeedToggle).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", btnSpeedToggle).CornerRadius = UDim.new(0, 7)
 
 local strokeSpeed = Instance.new("UIStroke")
 strokeSpeed.Color = ROXO_DARK
@@ -949,11 +956,11 @@ strokeSpeed.Thickness = 1
 strokeSpeed.Parent = btnSpeedToggle
 
 local valorLbl = Instance.new("TextLabel")
-valorLbl.Size = UDim2.new(1, -14, 0, 12)
-valorLbl.Position = UDim2.new(0, 7, 0, 50)
+valorLbl.Size = UDim2.new(1, -16, 0, 14)
+valorLbl.Position = UDim2.new(0, 8, 0, 58)
 valorLbl.BackgroundTransparency = 1
 valorLbl.Font = Enum.Font.Gotham
-valorLbl.TextSize = 9
+valorLbl.TextSize = 10
 valorLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
 valorLbl.TextXAlignment = Enum.TextXAlignment.Left
 valorLbl.Text = "Valor: 100 studs/s"
@@ -961,18 +968,18 @@ valorLbl.ZIndex = 4
 valorLbl.Parent = containerSpeed
 
 local boxValor = Instance.new("TextBox")
-boxValor.Size = UDim2.new(1, -14, 0, 24)
-boxValor.Position = UDim2.new(0, 7, 0, 64)
+boxValor.Size = UDim2.new(1, -16, 0, 26)
+boxValor.Position = UDim2.new(0, 8, 0, 74)
 boxValor.BackgroundColor3 = BG_BTN
 boxValor.BorderSizePixel = 0
 boxValor.Font = Enum.Font.GothamBold
-boxValor.TextSize = 10
+boxValor.TextSize = 11
 boxValor.TextColor3 = Color3.fromRGB(230, 220, 255)
 boxValor.PlaceholderText = "Digite o valor (1-1000)"
 boxValor.Text = ""
 boxValor.ZIndex = 4
 boxValor.Parent = containerSpeed
-Instance.new("UICorner", boxValor).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", boxValor).CornerRadius = UDim.new(0, 7)
 
 boxValor.FocusLost:Connect(function()
     local n = tonumber(boxValor.Text)
@@ -1049,11 +1056,28 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- ESP STATE
+-- ESP STATE + STORAGE
 -- ============================================
 local espOvosAtivo     = false
 local maxEspDistance   = 500
 local targetRarityName = "Todos"
+
+local espFolder = Instance.new("Folder")
+espFolder.Name   = "ESP_STORAGE"
+espFolder.Parent = Workspace
+
+local activeEggESP = {}
+
+local function limparObjetoESP(tbl, id)
+    if tbl[id] then
+        pcall(function() if tbl[id].gui then tbl[id].gui:Destroy() end end)
+        tbl[id] = nil
+    end
+end
+
+local function limparTudoESP(tbl)
+    for id in pairs(tbl) do limparObjetoESP(tbl, id) end
+end
 
 local function GetEggRarityInfo(egg)
     if not egg then return "Common", 100 end
@@ -1085,177 +1109,78 @@ local function GetEggRarityInfo(egg)
     return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
 end
 
--- VERSÃO MELHORADA — testa várias fontes e normaliza
 local function GetPetIcon(record)
     if not record then return nil end
 
-    local function normalizar(v)
-        if v == nil then return nil end
-        local s = tostring(v)
-        if s == "" or s == "0" then return nil end
-        if string.match(s, "://") then return s end
-        if tonumber(s) then return "rbxassetid://" .. s end
-        return nil
+    local rawIcon = record.Icon or record.PetIcon or record.ImageAsset or record.TextureId
+    if rawIcon then
+        return (type(rawIcon) == "number" or not string.match(tostring(rawIcon), "://"))
+            and ("rbxassetid://" .. tostring(rawIcon)) or tostring(rawIcon)
     end
 
-    -- 1) Direto no record
-    local icon = normalizar(record.Icon)
-             or normalizar(record.PetIcon)
-             or normalizar(record.ImageAsset)
-             or normalizar(record.TextureId)
-    if icon then return icon end
-
-    -- 2) Pelo nome do pet
     local targetName = record.Pet or record.PetId or record.PetName
         or record.AssetCategory or record.Category
     if targetName then
         if PetsData then
             local pInfo = (PetsData.Directory or PetsData)[targetName]
-            if pInfo then
-                icon = normalizar(pInfo.Icon)
-                    or normalizar(pInfo.Image)
-                    or normalizar(pInfo.AssetId)
-                if icon then return icon end
+            if pInfo and (pInfo.Icon or pInfo.Image or pInfo.AssetId) then
+                local img = pInfo.Icon or pInfo.Image or pInfo.AssetId
+                return (type(img) == "number" or not string.match(tostring(img), "://"))
+                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
             end
         end
         if AssetsData then
             local aInfo = (AssetsData.Directory or AssetsData)[targetName]
-            if aInfo then
-                icon = normalizar(aInfo.Icon)
-                    or normalizar(aInfo.Image)
-                    or normalizar(aInfo.AssetId)
-                if icon then return icon end
+            if aInfo and (aInfo.Icon or aInfo.Image or aInfo.AssetId) then
+                local img = aInfo.Icon or aInfo.Image or aInfo.AssetId
+                return (type(img) == "number" or not string.match(tostring(img), "://"))
+                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
             end
         end
     end
-
     return nil
 end
 
 -- ============================================
--- ABA 👁️
+-- ABA 👁️ — VISUALIZADOR DETALHADO
 -- ============================================
 local eyeHeaderLbl = Instance.new("TextLabel")
-eyeHeaderLbl.Size = UDim2.new(1, -14, 0, 12)
-eyeHeaderLbl.Position = UDim2.new(0, 7, 0, 0)
+eyeHeaderLbl.Size = UDim2.new(1, -16, 0, 14)
+eyeHeaderLbl.Position = UDim2.new(0, 8, 0, 0)
 eyeHeaderLbl.BackgroundTransparency = 1
 eyeHeaderLbl.Font = Enum.Font.GothamBold
-eyeHeaderLbl.TextSize = 9
+eyeHeaderLbl.TextSize = 10
 eyeHeaderLbl.TextColor3 = Color3.fromRGB(180, 220, 255)
 eyeHeaderLbl.TextXAlignment = Enum.TextXAlignment.Left
 eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos | 0 ovos"
 eyeHeaderLbl.ZIndex = 4
 eyeHeaderLbl.Parent = containerEye
 
--- EGG BOX compacta
-local eggBox = Instance.new("Frame")
-eggBox.Name = "EggBox"
-eggBox.Size = UDim2.new(1, -14, 0, 54)
-eggBox.Position = UDim2.new(0, 7, 0, 14)
-eggBox.BackgroundColor3 = Color3.fromRGB(20, 23, 30)
-eggBox.BorderSizePixel = 0
-eggBox.ZIndex = 4
-eggBox.Parent = containerEye
-Instance.new("UICorner", eggBox).CornerRadius = UDim.new(0, 7)
-
-local eggBoxStroke = Instance.new("UIStroke")
-eggBoxStroke.Color = Color3.fromRGB(46, 204, 113)
-eggBoxStroke.Thickness = 1.5
-eggBoxStroke.Transparency = 0.4
-eggBoxStroke.Parent = eggBox
-
-local petIconFrame = Instance.new("Frame")
-petIconFrame.Size = UDim2.new(0, 42, 0, 42)
-petIconFrame.Position = UDim2.new(0, 6, 0.5, -21)
-petIconFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
-petIconFrame.BorderSizePixel = 0
-petIconFrame.ZIndex = 5
-petIconFrame.Parent = eggBox
-Instance.new("UICorner", petIconFrame).CornerRadius = UDim.new(0, 5)
-
-local petIconStroke = Instance.new("UIStroke")
-petIconStroke.Color = Color3.fromRGB(46, 204, 113)
-petIconStroke.Thickness = 1
-petIconStroke.Transparency = 0.5
-petIconStroke.Parent = petIconFrame
-
-local petIcon = Instance.new("ImageLabel")
-petIcon.Name = "PetIcon"
-petIcon.Size = UDim2.new(1, -4, 1, -4)
-petIcon.Position = UDim2.new(0, 2, 0, 2)
-petIcon.BackgroundTransparency = 1
-petIcon.ScaleType = Enum.ScaleType.Fit
-petIcon.Image = ""
-petIcon.ZIndex = 6
-petIcon.Parent = petIconFrame
-
-local eggName = Instance.new("TextLabel")
-eggName.Name = "EggName"
-eggName.Size = UDim2.new(1, -60, 0, 14)
-eggName.Position = UDim2.new(0, 54, 0, 5)
-eggName.BackgroundTransparency = 1
-eggName.Font = Enum.Font.GothamBold
-eggName.TextSize = 11
-eggName.TextColor3 = Color3.fromRGB(240, 240, 245)
-eggName.TextXAlignment = Enum.TextXAlignment.Left
-eggName.TextTruncate = Enum.TextTruncate.AtEnd
-eggName.Text = "Nenhum ovo"
-eggName.ZIndex = 5
-eggName.Parent = eggBox
-
-local eggRarity = Instance.new("TextLabel")
-eggRarity.Name = "EggRarity"
-eggRarity.Size = UDim2.new(1, -60, 0, 11)
-eggRarity.Position = UDim2.new(0, 54, 0, 21)
-eggRarity.BackgroundTransparency = 1
-eggRarity.Font = Enum.Font.GothamBold
-eggRarity.TextSize = 9
-eggRarity.TextColor3 = Color3.fromRGB(46, 204, 113)
-eggRarity.TextXAlignment = Enum.TextXAlignment.Left
-eggRarity.Text = "★ —"
-eggRarity.ZIndex = 5
-eggRarity.Parent = eggBox
-
-local eggInfo = Instance.new("TextLabel")
-eggInfo.Name = "EggInfo"
-eggInfo.Size = UDim2.new(1, -60, 0, 10)
-eggInfo.Position = UDim2.new(0, 54, 0, 35)
-eggInfo.BackgroundTransparency = 1
-eggInfo.Font = Enum.Font.Gotham
-eggInfo.TextSize = 8
-eggInfo.TextColor3 = Color3.fromRGB(170, 180, 200)
-eggInfo.TextXAlignment = Enum.TextXAlignment.Left
-eggInfo.Text = "📏 —m  ⚖ —"
-eggInfo.ZIndex = 5
-eggInfo.Parent = eggBox
-
--- Toggle ESP
 local btnEyeToggle = Instance.new("TextButton")
-btnEyeToggle.Size = UDim2.new(1, -14, 0, 22)
-btnEyeToggle.Position = UDim2.new(0, 7, 0, 72)
+btnEyeToggle.Size = UDim2.new(1, -16, 0, 26)
+btnEyeToggle.Position = UDim2.new(0, 8, 0, 18)
 btnEyeToggle.BackgroundColor3 = BG_BTN
 btnEyeToggle.BorderSizePixel = 0
 btnEyeToggle.Font = Enum.Font.GothamBold
-btnEyeToggle.TextSize = 10
+btnEyeToggle.TextSize = 11
 btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
 btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
 btnEyeToggle.ZIndex = 4
 btnEyeToggle.Parent = containerEye
-Instance.new("UICorner", btnEyeToggle).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", btnEyeToggle).CornerRadius = UDim.new(0, 6)
 
--- Filtro
 local btnEyeFiltro = Instance.new("TextButton")
-btnEyeFiltro.Size = UDim2.new(1, -14, 0, 22)
-btnEyeFiltro.Position = UDim2.new(0, 7, 0, 98)
+btnEyeFiltro.Size = UDim2.new(1, -16, 0, 26)
+btnEyeFiltro.Position = UDim2.new(0, 8, 0, 48)
 btnEyeFiltro.BackgroundColor3 = BG_BTN
 btnEyeFiltro.BorderSizePixel = 0
 btnEyeFiltro.Font = Enum.Font.GothamBold
-btnEyeFiltro.TextSize = 10
+btnEyeFiltro.TextSize = 11
 btnEyeFiltro.TextColor3 = Color3.fromRGB(230, 220, 255)
 btnEyeFiltro.Text = "Filtro: Todos"
 btnEyeFiltro.ZIndex = 4
 btnEyeFiltro.Parent = containerEye
-Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 5)
+Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 6)
 
 local niveisFiltroEye = {
     "Todos","Common","Uncommon","Rare","Epic","Legendary",
@@ -1270,27 +1195,13 @@ btnEyeFiltro.MouseButton1Click:Connect(function()
     btnEyeFiltro.Text = "Filtro: " .. targetRarityName
 end)
 
-btnEyeToggle.MouseButton1Click:Connect(function()
-    espOvosAtivo = not espOvosAtivo
-    if espOvosAtivo then
-        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
-        btnEyeToggle.TextColor3 = VERDE
-        Toast("ESP ON", VERDE)
-    else
-        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
-        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
-        Toast("ESP OFF", AMARELO)
-    end
-end)
-
--- Scroll de cards
 local scrollEye = Instance.new("ScrollingFrame")
 scrollEye.Name = "ScrollEye"
-scrollEye.Size = UDim2.new(1, 0, 1, -126)
-scrollEye.Position = UDim2.new(0, 0, 0, 124)
+scrollEye.Size = UDim2.new(1, 0, 1, -84)
+scrollEye.Position = UDim2.new(0, 0, 0, 78)
 scrollEye.BackgroundTransparency = 1
 scrollEye.BorderSizePixel = 0
-scrollEye.ScrollBarThickness = 3
+scrollEye.ScrollBarThickness = 4
 scrollEye.ScrollBarImageColor3 = ROXO
 scrollEye.ScrollBarImageTransparency = 0.3
 scrollEye.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -1301,7 +1212,7 @@ scrollEye.ZIndex = 3
 scrollEye.Parent = containerEye
 
 local eyeLayout = Instance.new("UIListLayout")
-eyeLayout.Padding = UDim.new(0, 4)
+eyeLayout.Padding = UDim.new(0, 5)
 eyeLayout.SortOrder = Enum.SortOrder.LayoutOrder
 eyeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 eyeLayout.Parent = scrollEye
@@ -1317,21 +1228,39 @@ local function limparListaEye()
     end
 end
 
+-- 👇 NOVO: hash para evitar flicker na lista
+local ultimoHashEye = ""
+local function calcularHashEye(records)
+    local partes = {}
+    for _, r in ipairs(records) do
+        table.insert(partes,
+            (r.name or "?") .. "|" ..
+            (r.rarity or "?") .. "|" ..
+            tostring(r.dist or 0))
+    end
+    return table.concat(partes, "§")
+end
+
 local function atualizarListaEye(records)
     table.sort(records, function(a, b) return a.dist < b.dist end)
 
     eyeHeaderLbl.Text = string.format("ESP: %s | Filtro: %s | %d ovos",
         espOvosAtivo and "ON" or "OFF", targetRarityName, #records)
 
+    -- 👇 Só recria se algo mudou (evita flicker)
+    local hash = calcularHashEye(records)
+    if hash == ultimoHashEye then return end
+    ultimoHashEye = hash
+
     limparListaEye()
     if #records == 0 then
         local empty = Instance.new("TextLabel")
-        empty.Size              = UDim2.new(1, -6, 0, 30)
+        empty.Size              = UDim2.new(1, -8, 0, 40)
         empty.BackgroundTransparency = 1
         empty.Text              = "Nenhum ovo detectado."
         empty.TextColor3        = Color3.fromRGB(150, 150, 160)
         empty.Font              = Enum.Font.Gotham
-        empty.TextSize          = 9
+        empty.TextSize          = 10
         empty.TextWrapped       = true
         empty.LayoutOrder       = 1
         empty.Parent            = scrollEye
@@ -1339,18 +1268,18 @@ local function atualizarListaEye(records)
     end
 
     for i, rec in ipairs(records) do
-        if i > 30 then break end
+        if i > 40 then break end
 
         local rarCor = RARITY_COLOR[rec.rarity] or ROXO
 
         local card = Instance.new("Frame")
-        card.Size             = UDim2.new(1, -6, 0, 46)
-        card.BackgroundColor3 = Color3.fromRGB(20, 23, 30)
+        card.Size             = UDim2.new(1, -8, 0, 64)
+        card.BackgroundColor3 = BG_BTN
         card.BorderSizePixel  = 0
         card.LayoutOrder      = i
         card.Parent           = scrollEye
 
-        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 5)
+        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
 
         local stroke = Instance.new("UIStroke")
         stroke.Color        = rarCor
@@ -1359,8 +1288,8 @@ local function atualizarListaEye(records)
         stroke.Parent       = card
 
         local barra = Instance.new("Frame")
-        barra.Size             = UDim2.new(0, 2, 1, -8)
-        barra.Position         = UDim2.new(0, 3, 0, 4)
+        barra.Size             = UDim2.new(0, 3, 1, -10)
+        barra.Position         = UDim2.new(0, 4, 0, 5)
         barra.BackgroundColor3 = rarCor
         barra.BorderSizePixel  = 0
         barra.Parent           = card
@@ -1368,13 +1297,13 @@ local function atualizarListaEye(records)
         Instance.new("UICorner", barra).CornerRadius = UDim.new(0, 2)
 
         local imgFrame = Instance.new("Frame")
-        imgFrame.Size             = UDim2.new(0, 34, 0, 34)
-        imgFrame.Position         = UDim2.new(0, 8, 0, 6)
-        imgFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
+        imgFrame.Size             = UDim2.new(0, 48, 0, 48)
+        imgFrame.Position         = UDim2.new(0, 12, 0, 8)
+        imgFrame.BackgroundColor3 = BG
         imgFrame.BorderSizePixel  = 0
         imgFrame.Parent           = card
 
-        Instance.new("UICorner", imgFrame).CornerRadius = UDim.new(0, 4)
+        Instance.new("UICorner", imgFrame).CornerRadius = UDim.new(0, 5)
 
         local imgStroke = Instance.new("UIStroke")
         imgStroke.Color        = rarCor
@@ -1391,49 +1320,49 @@ local function atualizarListaEye(records)
         img.Parent            = imgFrame
 
         local nameL = Instance.new("TextLabel")
-        nameL.Size              = UDim2.new(1, -58, 0, 12)
-        nameL.Position          = UDim2.new(0, 48, 0, 4)
+        nameL.Size              = UDim2.new(1, -80, 0, 14)
+        nameL.Position          = UDim2.new(0, 66, 0, 6)
         nameL.BackgroundTransparency = 1
         nameL.Text              = rec.name or "?"
         nameL.TextColor3        = Color3.fromRGB(240, 240, 245)
         nameL.Font              = Enum.Font.GothamBold
-        nameL.TextSize          = 10
+        nameL.TextSize          = 11
         nameL.TextXAlignment    = Enum.TextXAlignment.Left
         nameL.TextTruncate      = Enum.TextTruncate.AtEnd
         nameL.Parent            = card
 
         local rarL = Instance.new("TextLabel")
-        rarL.Size              = UDim2.new(1, -58, 0, 10)
-        rarL.Position          = UDim2.new(0, 48, 0, 18)
+        rarL.Size              = UDim2.new(1, -80, 0, 12)
+        rarL.Position          = UDim2.new(0, 66, 0, 20)
         rarL.BackgroundTransparency = 1
         rarL.Text              = "★ " .. (rec.rarity or "?")
         rarL.TextColor3        = rarCor
         rarL.Font              = Enum.Font.GothamBold
-        rarL.TextSize          = 8
+        rarL.TextSize          = 9
         rarL.TextXAlignment    = Enum.TextXAlignment.Left
         rarL.Parent            = card
 
         local distL = Instance.new("TextLabel")
-        distL.Size              = UDim2.new(1, -58, 0, 10)
-        distL.Position          = UDim2.new(0, 48, 0, 30)
+        distL.Size              = UDim2.new(1, -80, 0, 12)
+        distL.Position          = UDim2.new(0, 66, 0, 32)
         distL.BackgroundTransparency = 1
         distL.Text              = "📏 " .. rec.dist .. "m  ⚖ " .. (RARITY_SCORE_MAP[rec.rarity] or 100)
         distL.TextColor3        = Color3.fromRGB(150, 150, 160)
         distL.Font              = Enum.Font.Gotham
-        distL.TextSize          = 8
+        distL.TextSize          = 9
         distL.TextXAlignment    = Enum.TextXAlignment.Left
         distL.Parent            = card
 
         if i == 1 then
             local badge = Instance.new("TextLabel")
-            badge.Size              = UDim2.new(0, 44, 0, 10)
-            badge.Position          = UDim2.new(1, -48, 1, -13)
-            badge.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
+            badge.Size              = UDim2.new(0, 56, 0, 12)
+            badge.Position          = UDim2.new(1, -62, 1, -16)
+            badge.BackgroundColor3 = VERDE
             badge.BorderSizePixel  = 0
             badge.Text              = "PRÓXIMO"
-            badge.TextColor3        = Color3.fromRGB(12, 14, 18)
+            badge.TextColor3        = BG
             badge.Font              = Enum.Font.GothamBlack
-            badge.TextSize          = 7
+            badge.TextSize          = 8
             badge.Parent            = card
 
             Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 3)
@@ -1441,47 +1370,9 @@ local function atualizarListaEye(records)
     end
 end
 
--- Atualiza EggBox
-local function atualizarEggBox(bestRecord)
-    if not bestRecord then
-        eggName.Text   = "Nenhum ovo"
-        eggName.TextColor3 = Color3.fromRGB(150, 150, 160)
-        eggRarity.Text = "★ —"
-        eggRarity.TextColor3 = Color3.fromRGB(100, 100, 110)
-        eggInfo.Text   = "📏 —m  ⚖ —"
-        petIcon.Image  = ""
-        petIcon.Visible = false
-        eggBoxStroke.Color = Color3.fromRGB(46, 204, 113)
-        petIconStroke.Color = Color3.fromRGB(46, 204, 113)
-        return
-    end
-
-    local rarityName = bestRecord.rarity or "Common"
-    local score      = RARITY_SCORE_MAP[rarityName] or 100
-    local rarCor     = RARITY_COLOR[rarityName] or Color3.fromRGB(46, 204, 113)
-
-    eggName.Text   = bestRecord.name or "Ovo"
-    eggName.TextColor3 = Color3.fromRGB(240, 240, 245)
-
-    eggRarity.Text = "★ " .. rarityName
-    eggRarity.TextColor3 = rarCor
-
-    eggInfo.Text = string.format("📏 %dm  ⚖ %d", bestRecord.dist or 0, score)
-
-    local iconId = GetPetIcon(bestRecord)
-    if iconId then
-        petIcon.Image = iconId
-        petIcon.Visible = true
-    else
-        petIcon.Image = ""
-        petIcon.Visible = false
-    end
-
-    eggBoxStroke.Color = rarCor
-    petIconStroke.Color = rarCor
-end
-
+-- ============================================
 -- SISTEMA DE ABAS
+-- ============================================
 local abaAtiva = 1
 local function atualizarAbas()
     containerFunc.Visible  = (abaAtiva == 1)
@@ -1528,16 +1419,16 @@ end)
 -- Fábrica de botões
 local function criarBotaoCyber(altura, texto, ordem)
     local cont = Instance.new("Frame")
-    cont.Size = UDim2.new(1, -14, 0, altura)
+    cont.Size = UDim2.new(1, -16, 0, altura)
     cont.BackgroundColor3 = BG_BTN
     cont.BorderSizePixel = 0
     cont.LayoutOrder = ordem
     cont.ZIndex = 3
     cont.Parent = scroll
-    Instance.new("UICorner", cont).CornerRadius = UDim.new(0, 6)
+    Instance.new("UICorner", cont).CornerRadius = UDim.new(0, 7)
 
     local barraLat = Instance.new("Frame")
-    barraLat.Size = UDim2.new(0, 2, 1, -6)
+    barraLat.Size = UDim2.new(0, 3, 1, -6)
     barraLat.Position = UDim2.new(0, 3, 0, 3)
     barraLat.BackgroundColor3 = ROXO
     barraLat.BorderSizePixel = 0
@@ -1551,11 +1442,11 @@ local function criarBotaoCyber(altura, texto, ordem)
     bordaBtn.Parent = cont
 
     local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -34, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
+    label.Size = UDim2.new(1, -40, 1, 0)
+    label.Position = UDim2.new(0, 12, 0, 0)
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.GothamBold
-    label.TextSize = 10
+    label.TextSize = 11
     label.TextColor3 = Color3.fromRGB(230, 220, 255)
     label.TextXAlignment = Enum.TextXAlignment.Left
     label.Text = texto
@@ -1563,11 +1454,11 @@ local function criarBotaoCyber(altura, texto, ordem)
     label.Parent = cont
 
     local seta = Instance.new("TextLabel")
-    seta.Size = UDim2.new(0, 16, 1, 0)
-    seta.Position = UDim2.new(1, -18, 0, 0)
+    seta.Size = UDim2.new(0, 18, 1, 0)
+    seta.Position = UDim2.new(1, -20, 0, 0)
     seta.BackgroundTransparency = 1
     seta.Font = Enum.Font.GothamBold
-    seta.TextSize = 13
+    seta.TextSize = 14
     seta.TextColor3 = ROXO
     seta.TextTransparency = 1
     seta.Text = "›"
@@ -1587,7 +1478,7 @@ local function criarBotaoCyber(altura, texto, ordem)
         }):Play()
         TweenService:Create(bordaBtn, TweenInfo.new(0.15), { Color = ROXO }):Play()
         TweenService:Create(seta, TweenInfo.new(0.15), {
-            TextTransparency = 0, Position = UDim2.new(1, -14, 0, 0),
+            TextTransparency = 0, Position = UDim2.new(1, -16, 0, 0),
         }):Play()
     end)
 
@@ -1597,14 +1488,14 @@ local function criarBotaoCyber(altura, texto, ordem)
         }):Play()
         TweenService:Create(bordaBtn, TweenInfo.new(0.2), { Color = ROXO_DARK }):Play()
         TweenService:Create(seta, TweenInfo.new(0.2), {
-            TextTransparency = 1, Position = UDim2.new(1, -18, 0, 0),
+            TextTransparency = 1, Position = UDim2.new(1, -20, 0, 0),
         }):Play()
     end)
 
     local function bounce()
         local tam = cont.Size
         TweenService:Create(cont, TweenInfo.new(0.06), {
-            Size = UDim2.new(tam.X.Scale, tam.X.Offset - 4,
+            Size = UDim2.new(tam.X.Scale, tam.X.Offset - 5,
                              tam.Y.Scale, tam.Y.Offset - 2),
         }):Play()
         task.wait(0.07)
@@ -1618,32 +1509,33 @@ local function criarBotaoCyber(altura, texto, ordem)
 end
 
 local btnAnti,  contAnti,  labelAnti,  setaAnti,  barraAnti,  bordaAnti,  bounceAnti  =
-    criarBotaoCyber(26, "🥚 ANTI-BOSS", 1)
+    criarBotaoCyber(30, "🥚 ANTI-BOSS", 1)
 
 local btnTrap,  contTrap,  labelTrap,  setaTrap,  barraTrap,  bordaTrap,  bounceTrap  =
-    criarBotaoCyber(26, "🚫 ANTI-TRAP", 2)
+    criarBotaoCyber(30, "🚫 ANTI-TRAP", 2)
 
 local btnKB,    contKB,    labelKB,    setaKB,    barraKB,    bordaKB,    bounceKB    =
-    criarBotaoCyber(26, "💫 ANTI-KNOCKBACK", 3)
+    criarBotaoCyber(30, "💫 ANTI-KNOCKBACK", 3)
 
 local btnBypass, contBypass, labelBypass, setaBypass, barraBypass, bordaBypass, bounceBypass =
-    criarBotaoCyber(26, "🔥 BYPASS", 4)
+    criarBotaoCyber(30, "🔥 BYPASS", 4)
 
 local btnESP,   contESP,   labelESP,   setaESP,   barraESP,   bordaESP,   bounceESP   =
-    criarBotaoCyber(26, "🥚 ESP OVOS", 5)
+    criarBotaoCyber(30, "🥚 ESP OVOS", 5)
 
 local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounceDst   =
-    criarBotaoCyber(26, "📍 DEFINIR DESTINO", 6)
+    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 6)
 
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
-    criarBotaoCyber(26, "🎯 RESET SPAWN", 7)
+    criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
+-- Botão do Painel Flutuante
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
-    criarBotaoCyber(26, "🌌 TP-EGG", 8)
+    criarBotaoCyber(30, "🪟 PAINEL FLUTUANTE", 8)
 
 -- ============================================
--- PAINEL FLUTUANTE (não mexi)
+-- PAINEL FLUTUANTE INTEGRADO (--!nonstrict.txt)
 -- ============================================
 local PainelFlutuante = { gui = nil, aberto = false }
 
@@ -1662,8 +1554,8 @@ local function criarPainelFlutuante()
     screenGui.Parent = PlayerGui
 
     local panel = Instance.new("Frame")
-    panel.Size = UDim2.new(0, 240, 0, 108)
-    panel.Position = UDim2.new(0, 20, 0, 80)
+    panel.Size = UDim2.new(0, 280, 0, 118)
+    panel.Position = UDim2.new(0, 20, 0, 100)
     panel.BackgroundColor3 = Color3.fromRGB(28, 30, 38)
     panel.BorderSizePixel = 0
     panel.Active = true
@@ -1676,19 +1568,19 @@ local function criarPainelFlutuante()
     stroke.Thickness = 1
 
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0, 18)
-    title.Position = UDim2.new(0, 10, 0, 4)
+    title.Size = UDim2.new(1, -20, 0, 20)
+    title.Position = UDim2.new(0, 12, 0, 4)
     title.BackgroundTransparency = 1
     title.Text = "TP  •  Nests (loop)"
     title.TextColor3 = Color3.fromRGB(230, 230, 240)
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 12
+    title.TextSize = 13
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.Parent = panel
 
     local toggleBg = Instance.new("Frame")
-    toggleBg.Size = UDim2.new(0, 44, 0, 22)
-    toggleBg.Position = UDim2.new(0, 12, 0, 28)
+    toggleBg.Size = UDim2.new(0, 50, 0, 26)
+    toggleBg.Position = UDim2.new(0, 15, 0, 30)
     toggleBg.BackgroundColor3 = Color3.fromRGB(60, 62, 72)
     toggleBg.BorderSizePixel = 0
     toggleBg.Active = true
@@ -1696,7 +1588,7 @@ local function criarPainelFlutuante()
     Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
 
     local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, 18, 0, 18)
+    knob.Size = UDim2.new(0, 22, 0, 22)
     knob.Position = UDim2.new(0, 2, 0, 2)
     knob.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
     knob.BorderSizePixel = 0
@@ -1704,39 +1596,39 @@ local function criarPainelFlutuante()
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
 
     local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(0, 80, 0, 18)
-    statusLabel.Position = UDim2.new(0, 66, 0, 30)
+    statusLabel.Size = UDim2.new(0, 100, 0, 20)
+    statusLabel.Position = UDim2.new(0, 80, 0, 33)
     statusLabel.BackgroundTransparency = 1
     statusLabel.Text = "OFF"
     statusLabel.TextColor3 = Color3.fromRGB(220, 90, 90)
     statusLabel.Font = Enum.Font.GothamBold
-    statusLabel.TextSize = 12
+    statusLabel.TextSize = 14
     statusLabel.TextXAlignment = Enum.TextXAlignment.Left
     statusLabel.Parent = panel
 
     local testBtn = Instance.new("TextButton")
-    testBtn.Size = UDim2.new(0, 76, 0, 22)
-    testBtn.Position = UDim2.new(1, -86, 0, 28)
+    testBtn.Size = UDim2.new(0, 90, 0, 26)
+    testBtn.Position = UDim2.new(1, -100, 0, 30)
     testBtn.BackgroundColor3 = Color3.fromRGB(60, 90, 160)
     testBtn.BorderSizePixel = 0
     testBtn.Text = "TP TESTE"
     testBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
     testBtn.Font = Enum.Font.GothamBold
-    testBtn.TextSize = 11
+    testBtn.TextSize = 12
     testBtn.Parent = panel
     Instance.new("UICorner", testBtn).CornerRadius = UDim.new(0, 6)
 
     local footerHolder = Instance.new("Frame")
-    footerHolder.Size = UDim2.new(1, -16, 0, 46)
-    footerHolder.Position = UDim2.new(0, 8, 0, 56)
+    footerHolder.Size = UDim2.new(1, -20, 0, 52)
+    footerHolder.Position = UDim2.new(0, 10, 0, 62)
     footerHolder.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
     footerHolder.BorderSizePixel = 0
     footerHolder.Parent = panel
     Instance.new("UICorner", footerHolder).CornerRadius = UDim.new(0, 6)
 
     local footerScroll = Instance.new("ScrollingFrame")
-    footerScroll.Size = UDim2.new(1, -6, 1, -6)
-    footerScroll.Position = UDim2.new(0, 3, 0, 3)
+    footerScroll.Size = UDim2.new(1, -8, 1, -8)
+    footerScroll.Position = UDim2.new(0, 4, 0, 4)
     footerScroll.BackgroundTransparency = 1
     footerScroll.BorderSizePixel = 0
     footerScroll.ScrollBarThickness = 3
@@ -1756,12 +1648,12 @@ local function criarPainelFlutuante()
     local function log(msg, color)
         lineCount += 1
         local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, 0, 0, 11)
+        lbl.Size = UDim2.new(1, 0, 0, 12)
         lbl.BackgroundTransparency = 1
         lbl.Text = "• " .. tostring(msg)
         lbl.TextColor3 = color or Color3.fromRGB(180, 200, 220)
         lbl.Font = Enum.Font.Code
-        lbl.TextSize = 9
+        lbl.TextSize = 10
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.LayoutOrder = lineCount
         lbl.Parent = footerScroll
@@ -1885,7 +1777,7 @@ local function criarPainelFlutuante()
         enabled = state
         if state then
             TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 175, 100)}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -20, 0, 2)}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -24, 0, 2)}):Play()
             statusLabel.Text = "ON"
             statusLabel.TextColor3 = Color3.fromRGB(90, 220, 130)
             log("Ativado.", Color3.fromRGB(120, 220, 160))
@@ -2019,16 +1911,16 @@ local function togglePainelFlutuante()
     PainelFlutuante.aberto = not PainelFlutuante.aberto
     PainelFlutuante.gui.Enabled = PainelFlutuante.aberto
     if PainelFlutuante.aberto then
-        Toast("TP-EGG ON", VERDE)
+        Toast("Painel Flutuante ON", VERDE)
     else
-        Toast("TP-EGG OFF", AMARELO)
+        Toast("Painel Flutuante OFF", AMARELO)
     end
 end
 
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
-faixaBase.Size = UDim2.new(1, -14, 0, 2)
-faixaBase.Position = UDim2.new(0, 7, 1, -22)
+faixaBase.Size = UDim2.new(1, -16, 0, 2)
+faixaBase.Position = UDim2.new(0, 8, 1, -26)
 faixaBase.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 faixaBase.BorderSizePixel = 0
 faixaBase.ZIndex = 3
@@ -2044,15 +1936,15 @@ gradBase.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradBase.Parent = faixaBase
 
 local rodape = Instance.new("Frame")
-rodape.Size = UDim2.new(1, 0, 0, 18)
-rodape.Position = UDim2.new(0, 0, 1, -20)
+rodape.Size = UDim2.new(1, 0, 0, 20)
+rodape.Position = UDim2.new(0, 0, 1, -23)
 rodape.BackgroundTransparency = 1
 rodape.ZIndex = 3
 rodape.Parent = menu
 
 local ledRodape = Instance.new("Frame")
-ledRodape.Size = UDim2.new(0, 5, 0, 5)
-ledRodape.Position = UDim2.new(0, 8, 0, 6)
+ledRodape.Size = UDim2.new(0, 6, 0, 6)
+ledRodape.Position = UDim2.new(0, 10, 0, 7)
 ledRodape.BackgroundColor3 = VERMELHO
 ledRodape.BorderSizePixel = 0
 ledRodape.ZIndex = 4
@@ -2060,11 +1952,11 @@ ledRodape.Parent = rodape
 Instance.new("UICorner", ledRodape).CornerRadius = UDim.new(1, 0)
 
 local labelStatus = Instance.new("TextLabel")
-labelStatus.Size = UDim2.new(1, -22, 1, 0)
-labelStatus.Position = UDim2.new(0, 18, 0, 0)
+labelStatus.Size = UDim2.new(1, -26, 1, 0)
+labelStatus.Position = UDim2.new(0, 22, 0, 0)
 labelStatus.BackgroundTransparency = 1
 labelStatus.Font = Enum.Font.GothamBold
-labelStatus.TextSize = 8
+labelStatus.TextSize = 9
 labelStatus.TextColor3 = Color3.fromRGB(200, 200, 220)
 labelStatus.TextXAlignment = Enum.TextXAlignment.Left
 labelStatus.Text = "STATUS: INATIVO"
@@ -2074,8 +1966,8 @@ labelStatus.Parent = rodape
 -- Minimizar
 local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, faixaBase, rodape }
 local minimizado = false
-local tamanhoNormal = UDim2.new(0, LARGURA_PAINEL, 0, ALTURA_PAINEL)
-local tamanhoMin    = UDim2.new(0, LARGURA_PAINEL, 0, ALTURA_MIN)
+local tamanhoNormal = UDim2.new(0, 200, 0, 220)
+local tamanhoMin    = UDim2.new(0, 200, 0, 36)
 
 btnMin.MouseButton1Click:Connect(function()
     minimizado = not minimizado
@@ -2090,6 +1982,42 @@ btnMin.MouseButton1Click:Connect(function()
     TweenService:Create(holder, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
         Size = minimizado and tamanhoMin or tamanhoNormal
     }):Play()
+end)
+
+-- ============================================
+-- FUNÇÃO CENTRAL DO ESP (sincroniza os 2 botões)
+-- ============================================
+local function setEspState(novo)
+    espOvosAtivo = novo
+
+    -- Botão da aba 👁️
+    if espOvosAtivo then
+        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
+        btnEyeToggle.TextColor3 = VERDE
+        btnEyeToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
+    else
+        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
+        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
+        btnEyeToggle.BackgroundColor3 = BG_BTN
+    end
+
+    -- Botão da aba Funções
+    if labelESP then
+        labelESP.Text = espOvosAtivo and "🥚 ESP OVOS  [ON]" or "🥚 ESP OVOS"
+    end
+
+    -- Limpa ao desligar
+    if not espOvosAtivo then
+        limparTudoESP(activeEggESP)
+        atualizarListaEye({})
+    end
+
+    Toast(espOvosAtivo and "ESP ON" or "ESP OFF",
+          espOvosAtivo and VERDE or AMARELO)
+end
+
+btnEyeToggle.MouseButton1Click:Connect(function()
+    setEspState(not espOvosAtivo)
 end)
 
 -- Callbacks
@@ -2117,16 +2045,7 @@ end)
 
 btnESP.MouseButton1Click:Connect(function()
     bounceESP()
-    espOvosAtivo = not espOvosAtivo
-    if espOvosAtivo then
-        Toast("ESP ON", VERDE)
-        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
-        btnEyeToggle.TextColor3 = VERDE
-    else
-        Toast("ESP OFF", AMARELO)
-        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
-        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
-    end
+    setEspState(not espOvosAtivo)
 end)
 
 btnDst.MouseButton1Click:Connect(function()
@@ -2142,11 +2061,13 @@ btnReset.MouseButton1Click:Connect(function()
     Destino.usarSpawn = true
 end)
 
+-- Callback do Painel Flutuante
 btnFlutuante.MouseButton1Click:Connect(function()
     bounceFlutuante()
     togglePainelFlutuante()
 end)
 
+-- Botão TP-AREA
 btnTpArea2.MouseButton1Click:Connect(function()
     executarTpAreaIntegrado(
         AreaSelecionada,
@@ -2191,14 +2112,14 @@ task.spawn(function()
         TweenService:Create(ledHeader, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
             BackgroundTransparency = 0.4,
             Size = UDim2.new(0, 5, 0, 5),
-            Position = UDim2.new(0, 8, 0, 11),
+            Position = UDim2.new(0, 10, 0, 13),
         }):Play()
         task.wait(0.6)
         if not gui.Parent then break end
         TweenService:Create(ledHeader, TweenInfo.new(0.6, Enum.EasingStyle.Sine), {
             BackgroundTransparency = 0,
-            Size = UDim2.new(0, 5, 0, 5),
-            Position = UDim2.new(0, 8, 0, 11),
+            Size = UDim2.new(0, 6, 0, 6),
+            Position = UDim2.new(0, 10, 0, 13),
         }):Play()
         task.wait(0.6)
     end
@@ -2330,63 +2251,140 @@ task.spawn(function()
     end
 end)
 
--- ESP LOOP (lista + best egg)
+-- ============================================
+-- ESP LOOP PRINCIPAL (estabilizado)
+-- ============================================
 task.spawn(function()
+    local INTERVALO       = 0.15
+    local INTERVALO_LISTA = 0.5
+    local ULTIMA_LISTA    = 0
+
     while gui.Parent do
-        task.wait(0.5)
-        pcall(function()
-            local char = LocalPlayer.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-            local myPos = hrp and hrp.Position or Vector3.zero
+        task.wait(INTERVALO)
 
-            if espOvosAtivo and EggState and EggState.ReadFieldEggs then
-                local ok, snapshot = pcall(EggState.ReadFieldEggs)
-                if ok and snapshot and snapshot.Records then
-                    local visiveis = {}
-                    local melhorOvo = nil
-                    local melhorScore = -1
+        if not espOvosAtivo or not EggState or not EggState.ReadFieldEggs then
+            if next(activeEggESP) then
+                limparTudoESP(activeEggESP)
+                atualizarListaEye({})
+            end
+        else
+            local ok, snapshot = pcall(EggState.ReadFieldEggs)
+            if ok and snapshot and snapshot.Records then
+                local char  = LocalPlayer.Character
+                local hrp   = char and char:FindFirstChild("HumanoidRootPart")
+                local myPos = hrp and hrp.Position or Vector3.zero
 
-                    for _, record in ipairs(snapshot.Records) do
-                        if record.State == "Slot" and record.BoundsCFrame then
-                            local eggPos = record.BoundsCFrame.Position
-                            local dist   = math.floor((eggPos - myPos).Magnitude)
+                local currentUids = {}
+                local visiveis    = {}
+                local agora       = tick()
 
-                            if dist <= maxEspDistance then
-                                local rarityName = GetEggRarityInfo(record)
-                                local score = RARITY_SCORE_MAP[rarityName] or 100
+                for _, record in ipairs(snapshot.Records) do
+                    if record.State == "Slot" and record.BoundsCFrame then
+                        local eggPos = record.BoundsCFrame.Position
+                        local dist   = math.floor((eggPos - myPos).Magnitude)
 
-                                if targetRarityName == "Todos"
-                                or rarityName:lower() == targetRarityName:lower() then
+                        if dist <= maxEspDistance then
+                            local rarityName = GetEggRarityInfo(record)
 
-                                    local dados = {
-                                        name   = record.AssetCategory or record.Pet or "Ovo",
-                                        rarity = rarityName,
-                                        dist   = dist,
-                                        icon   = GetPetIcon(record),
-                                        _record = record,
+                            if targetRarityName == "Todos"
+                            or rarityName:lower() == targetRarityName:lower() then
+
+                                local uid = record.Uid or tostring(record.BoundsCFrame)
+                                currentUids[uid] = true
+
+                                if not activeEggESP[uid] then
+                                    local bb = Instance.new("BillboardGui")
+                                    bb.Name        = "ESP_EGG_" .. uid
+                                    bb.AlwaysOnTop = true
+                                    bb.Size        = UDim2.fromOffset(140, 80)
+                                    bb.StudsOffset = Vector3.new(0, 3, 0)
+                                    bb.LightInfluence = 0
+                                    bb.MaxDistance = maxEspDistance
+
+                                    local container = Instance.new("Frame")
+                                    container.Size = UDim2.fromScale(1, 1)
+                                    container.BackgroundTransparency = 1
+                                    container.Parent = bb
+
+                                    local layout2 = Instance.new("UIListLayout")
+                                    layout2.SortOrder = Enum.SortOrder.LayoutOrder
+                                    layout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
+                                    layout2.VerticalAlignment   = Enum.VerticalAlignment.Center
+                                    layout2.Padding = UDim.new(0, 2)
+                                    layout2.Parent = container
+
+                                    local petImage = Instance.new("ImageLabel")
+                                    petImage.Name = "PetIcon"
+                                    petImage.Size = UDim2.fromOffset(36, 36)
+                                    petImage.BackgroundTransparency = 1
+                                    petImage.ScaleType = Enum.ScaleType.Fit
+                                    petImage.LayoutOrder = 1
+                                    petImage.Parent = container
+
+                                    local textLabel = Instance.new("TextLabel")
+                                    textLabel.Name = "EggText"
+                                    textLabel.Size = UDim2.new(1, 0, 0, 30)
+                                    textLabel.BackgroundTransparency = 1
+                                    textLabel.Font = Enum.Font.GothamBold
+                                    textLabel.TextSize = 12
+                                    textLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                                    textLabel.TextStrokeTransparency = 0.2
+                                    textLabel.LayoutOrder = 2
+                                    textLabel.Parent = container
+
+                                    bb.Parent = espFolder
+                                    activeEggESP[uid] = {
+                                        gui = bb, label = textLabel, image = petImage
                                     }
-                                    table.insert(visiveis, dados)
+                                end
 
-                                    if score > melhorScore then
-                                        melhorScore = score
-                                        melhorOvo = dados
+                                local espItem = activeEggESP[uid]
+                                if espItem then
+                                    espItem.gui.StudsOffsetWorldSpace =
+                                        eggPos + Vector3.new(0, 2.5, 0)
+
+                                    local cor = RARITY_COLOR[rarityName]
+                                        or Color3.fromRGB(0, 255, 0)
+                                    espItem.label.TextColor3 = cor
+                                    espItem.label.Text = string.format(
+                                        "%s\n[%s] - %dm",
+                                        record.AssetCategory or "Ovo", rarityName, dist
+                                    )
+
+                                    local iconAsset = GetPetIcon(record)
+                                    if iconAsset then
+                                        if espItem.image.Image ~= iconAsset then
+                                            espItem.image.Image = iconAsset
+                                        end
+                                        espItem.image.Visible = true
+                                    else
+                                        espItem.image.Visible = false
                                     end
                                 end
+
+                                table.insert(visiveis, {
+                                    name   = record.AssetCategory or record.Pet or "Ovo",
+                                    rarity = rarityName,
+                                    dist   = dist,
+                                    icon   = GetPetIcon(record),
+                                })
                             end
                         end
                     end
-
-                    atualizarListaEye(visiveis)
-                    atualizarEggBox(melhorOvo)
-                else
-                    atualizarListaEye({})
-                    atualizarEggBox(nil)
                 end
-            else
-                atualizarListaEye({})
-                atualizarEggBox(nil)
+
+                for uid in pairs(activeEggESP) do
+                    if not currentUids[uid] then
+                        limparObjetoESP(activeEggESP, uid)
+                    end
+                end
+
+                if agora - ULTIMA_LISTA >= INTERVALO_LISTA then
+                    ULTIMA_LISTA = agora
+                    atualizarListaEye(visiveis)
+                end
             end
-        end)
+        end
     end
 end)
 
