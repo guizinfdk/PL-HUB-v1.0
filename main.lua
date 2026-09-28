@@ -2105,16 +2105,10 @@ do
 end
 
 -- ==========================================
--- TP-EGG (painel flutuante separado)
+-- TP-EGG (painel flutuante — botão só abre/fecha)
 -- ==========================================
 do
-    local RESPAWN_WAIT = 2
-    local enabled      = false
-    local loopConn     = nil
-    local cachedPos    = nil
-    local lastDeathCFrame = nil
-
-    -- ScreenGui separada (fica escondida até ativar)
+    -- ScreenGui própria, escondida até clicar no botão 🌀 TP-EGG
     local tpEggGui = Instance.new("ScreenGui")
     tpEggGui.Name = "TweenTPPanel"
     tpEggGui.ResetOnSpawn = false
@@ -2123,6 +2117,10 @@ do
     tpEggGui.Enabled = false
     tpEggGui.Parent = PlayerGui
 
+    local player = Players.LocalPlayer
+    local RESPAWN_WAIT = 2
+
+    -- ======================= UI ================================
     local panel = Instance.new("Frame")
     panel.Size = UDim2.new(0, 280, 0, 118)
     panel.Position = UDim2.new(0, 20, 0, 100)
@@ -2238,9 +2236,11 @@ do
         end
     end
 
-    log("TP-EGG carregado.", Color3.fromRGB(120, 220, 160))
+    log("Script carregado.", Color3.fromRGB(120, 220, 160))
 
-    -- BUSCA GuardAreas > Forest > Nests
+    local enabled = false
+
+    -- =========== BUSCA GuardAreas > Forest > Nests =============
     local function findNests()
         local guardAreas
         for _, d in ipairs(Workspace:GetDescendants()) do
@@ -2298,6 +2298,7 @@ do
         return pos
     end
 
+    -- =================== DETECTA O PROMPT ======================
     local function isSmartPrompt(prompt)
         if not prompt or not prompt.Parent then return false end
         if prompt.Name == "CarryAreaEgg" then return true end
@@ -2310,6 +2311,10 @@ do
         end
         return false
     end
+
+    -- ============ LOOP CONTÍNUO (sem delay) ====================
+    local loopConn  = nil
+    local cachedPos = nil
 
     local function stopLoop()
         if loopConn then
@@ -2331,7 +2336,7 @@ do
                 stopLoop()
                 return
             end
-            local char = LocalPlayer.Character
+            local char = player.Character
             local hrp  = char and char:FindFirstChild("HumanoidRootPart")
             if hrp and cachedPos then
                 hrp.CFrame = CFrame.new(cachedPos) * (hrp.CFrame - hrp.CFrame.Position)
@@ -2339,6 +2344,7 @@ do
         end)
     end
 
+    -- ============ TOGGLE =======================================
     local function setToggle(state)
         enabled = state
         if state then
@@ -2364,11 +2370,12 @@ do
         end
     end)
 
+    -- ================== TELEPORTE + LOOP =======================
     local function doTeleport(withLoop)
         cachedPos = getNestsPosition(true)
         if not cachedPos then return end
 
-        local char = LocalPlayer.Character
+        local char = player.Character
         local hrp  = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then
             log("Sem HRP.", Color3.fromRGB(240, 120, 120))
@@ -2387,7 +2394,7 @@ do
         log("Prompt disparou: " .. (prompt and prompt.Name or "?"),
             Color3.fromRGB(200, 200, 200))
         if not enabled then return end
-        if triggeringPlayer and triggeringPlayer ~= LocalPlayer then return end
+        if triggeringPlayer and triggeringPlayer ~= player then return end
         if not isSmartPrompt(prompt) then
             log("Nao e SmartPrompt. Ignorando.", Color3.fromRGB(220, 180, 90))
             return
@@ -2395,7 +2402,9 @@ do
         doTeleport(true)
     end
 
+    -- ============ HOOK EM CADA PROXIMITYPROMPT =================
     local watched = setmetatable({}, {__mode = "k"})
+
     local function watchPrompt(prompt)
         if watched[prompt] then return end
         watched[prompt] = true
@@ -2424,6 +2433,9 @@ do
         doTeleport(true)
     end)
 
+    -- ================ MORTE / RESPAWN ==========================
+    local lastDeathCFrame = nil
+
     local function hookCharacter(char)
         local humanoid = char:WaitForChild("Humanoid", 10)
         if not humanoid then return end
@@ -2441,7 +2453,7 @@ do
         end)
     end
 
-    LocalPlayer.CharacterAdded:Connect(function(char)
+    player.CharacterAdded:Connect(function(char)
         hookCharacter(char)
         if not enabled or not lastDeathCFrame then return end
         local savedCF = lastDeathCFrame
@@ -2457,25 +2469,27 @@ do
         end)
     end)
 
-    if LocalPlayer.Character then
-        hookCharacter(LocalPlayer.Character)
+    if player.Character then
+        hookCharacter(player.Character)
     end
 
-    -- Callback do botão TP-EGG
+    log("Pronto. Prompts monitorados.", Color3.fromRGB(120, 220, 160))
+
+    -- ========================================================
+    -- Callback do botão 🌀 TP-EGG do PL Hub — só abre/fecha o painel
+    -- ========================================================
     btnTpEgg.MouseButton1Click:Connect(function()
         bounceTpEgg()
-        enabled = not enabled
-        tpEggGui.Enabled = enabled
+        tpEggGui.Enabled = not tpEggGui.Enabled
 
-        if enabled then
+        if tpEggGui.Enabled then
             contTpEgg.BackgroundColor3     = Color3.fromRGB(20, 55, 60)
             barraTpEgg.BackgroundColor3    = AZUL
             bordaTpEgg.Color               = AZUL
             labelTpEgg.TextColor3          = Color3.fromRGB(180, 230, 255)
             setaTpEgg.TextColor3           = AZUL
             labelTpEgg.Text                = "🌀 TP-EGG  [ON]"
-            Toast("TP-EGG ATIVADO", AZUL)
-            log("Ativado pelo PL Hub.", Color3.fromRGB(120, 220, 160))
+            Toast("TP-EGG painel aberto", AZUL)
         else
             contTpEgg.BackgroundColor3     = BG_BTN
             barraTpEgg.BackgroundColor3    = ROXO
@@ -2483,8 +2497,7 @@ do
             labelTpEgg.TextColor3          = Color3.fromRGB(230, 220, 255)
             setaTpEgg.TextColor3           = ROXO
             labelTpEgg.Text                = "🌀 TP-EGG"
-            stopLoop()
-            Toast("TP-EGG DESATIVADO", AMARELO)
+            Toast("TP-EGG painel fechado", AMARELO)
         end
     end)
 end
