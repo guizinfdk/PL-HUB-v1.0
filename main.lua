@@ -1056,28 +1056,11 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- ESP STATE + STORAGE
+-- ESP STATE (só lista, sem billboard)
 -- ============================================
 local espOvosAtivo     = false
 local maxEspDistance   = 500
 local targetRarityName = "Todos"
-
-local espFolder = Instance.new("Folder")
-espFolder.Name   = "ESP_STORAGE"
-espFolder.Parent = Workspace
-
-local activeEggESP = {}
-
-local function limparObjetoESP(tbl, id)
-    if tbl[id] then
-        pcall(function() if tbl[id].gui then tbl[id].gui:Destroy() end end)
-        tbl[id] = nil
-    end
-end
-
-local function limparTudoESP(tbl)
-    for id in pairs(tbl) do limparObjetoESP(tbl, id) end
-end
 
 local function GetEggRarityInfo(egg)
     if not egg then return "Common", 100 end
@@ -1527,17 +1510,16 @@ local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounce
 -- Botão do Painel Flutuante
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
-    criarBotaoCyber(30, "🪟 PAINEL FLUTUANTE", 8)
+    criarBotaoCyber(30, "🌌 TP-EGG", 8)
 
 -- ============================================
--- PAINEL FLUTUANTE INTEGRADO (--!nonstrict.txt)
+-- PAINEL FLUTUANTE INTEGRADO
 -- ============================================
 local PainelFlutuante = { gui = nil, aberto = false }
 
 local function criarPainelFlutuante()
     if PainelFlutuante.gui then return PainelFlutuante.gui end
 
-    -- ===== Painel Arrastável + Toggle | TP seco + Loop contínuo =====
     local RESPAWN_WAIT = 2
 
     local screenGui = Instance.new("ScreenGui")
@@ -1907,9 +1889,9 @@ local function togglePainelFlutuante()
     PainelFlutuante.aberto = not PainelFlutuante.aberto
     PainelFlutuante.gui.Enabled = PainelFlutuante.aberto
     if PainelFlutuante.aberto then
-        Toast("Painel Flutuante ON", VERDE)
+        Toast("TP-EGG ON", VERDE)
     else
-        Toast("Painel Flutuante OFF", AMARELO)
+        Toast("TP-EGG OFF", AMARELO)
     end
 end
 
@@ -2220,7 +2202,7 @@ task.spawn(function()
     end
 end)
 
--- ESP LOOP PRINCIPAL
+-- ESP LOOP PRINCIPAL (só lista, sem billboard)
 task.spawn(function()
     while gui.Parent do
         task.wait(0.2)
@@ -2232,8 +2214,7 @@ task.spawn(function()
             if espOvosAtivo and EggState and EggState.ReadFieldEggs then
                 local ok, snapshot = pcall(EggState.ReadFieldEggs)
                 if ok and snapshot and snapshot.Records then
-                    local currentUids = {}
-                    local visiveis    = {}
+                    local visiveis = {}
 
                     for _, record in ipairs(snapshot.Records) do
                         if record.State == "Slot" and record.BoundsCFrame then
@@ -2246,67 +2227,6 @@ task.spawn(function()
                                 if targetRarityName == "Todos"
                                 or rarityName:lower() == targetRarityName:lower() then
 
-                                    local uid = record.Uid or tostring(record.BoundsCFrame)
-                                    currentUids[uid] = true
-
-                                    if not activeEggESP[uid] then
-                                        local bb = Instance.new("BillboardGui")
-                                        bb.Name         = "ESP_EGG_" .. uid
-                                        bb.AlwaysOnTop  = true
-                                        bb.Size         = UDim2.fromOffset(140, 80)
-                                        bb.StudsOffset  = Vector3.new(0, 3, 0)
-
-                                        local container = Instance.new("Frame")
-                                        container.Size              = UDim2.fromScale(1, 1)
-                                        container.BackgroundTransparency = 1
-                                        container.Parent            = bb
-
-                                        local layout2 = Instance.new("UIListLayout")
-                                        layout2.SortOrder         = Enum.SortOrder.LayoutOrder
-                                        layout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                                        layout2.VerticalAlignment   = Enum.VerticalAlignment.Center
-                                        layout2.Padding           = UDim.new(0, 2)
-                                        layout2.Parent            = container
-
-                                        local petImage = Instance.new("ImageLabel")
-                                        petImage.Name              = "PetIcon"
-                                        petImage.Size              = UDim2.fromOffset(36, 36)
-                                        petImage.BackgroundTransparency = 1
-                                        petImage.ScaleType         = Enum.ScaleType.Fit
-                                        petImage.LayoutOrder       = 1
-                                        petImage.Parent            = container
-
-                                        local textLabel = Instance.new("TextLabel")
-                                        textLabel.Name              = "EggText"
-                                        textLabel.Size              = UDim2.new(1, 0, 0, 30)
-                                        textLabel.BackgroundTransparency = 1
-                                        textLabel.Font              = Enum.Font.GothamBold
-                                        textLabel.TextSize          = 12
-                                        textLabel.TextColor3        = Color3.fromRGB(0, 255, 0)
-                                        textLabel.TextStrokeTransparency = 0.2
-                                        textLabel.LayoutOrder       = 2
-                                        textLabel.Parent            = container
-
-                                        bb.Parent = espFolder
-                                        activeEggESP[uid] = { gui = bb, label = textLabel, image = petImage }
-                                    end
-
-                                    local espItem = activeEggESP[uid]
-                                    if espItem then
-                                        espItem.gui.StudsOffsetWorldSpace = eggPos + Vector3.new(0, 2.5, 0)
-                                        espItem.label.Text = string.format(
-                                            "%s\n[%s] - %dm",
-                                            record.AssetCategory or "Ovo", rarityName, dist
-                                        )
-                                        local iconAsset = GetPetIcon(record)
-                                        if iconAsset then
-                                            espItem.image.Image   = iconAsset
-                                            espItem.image.Visible = true
-                                        else
-                                            espItem.image.Visible = false
-                                        end
-                                    end
-
                                     table.insert(visiveis, {
                                         name   = record.AssetCategory or record.Pet or "Ovo",
                                         rarity = rarityName,
@@ -2318,16 +2238,9 @@ task.spawn(function()
                         end
                     end
 
-                    for uid in pairs(activeEggESP) do
-                        if not currentUids[uid] then
-                            limparObjetoESP(activeEggESP, uid)
-                        end
-                    end
-
                     atualizarListaEye(visiveis)
                 end
             else
-                limparTudoESP(activeEggESP)
                 atualizarListaEye({})
             end
         end)
