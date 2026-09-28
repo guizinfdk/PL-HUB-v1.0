@@ -1524,6 +1524,395 @@ local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounce
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
     criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
+-- Botão do Painel Flutuante
+local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
+      barraFlutuante, bordaFlutuante, bounceFlutuante =
+    criarBotaoCyber(30, "🪟 PAINEL FLUTUANTE", 8)
+
+-- ============================================
+-- PAINEL FLUTUANTE INTEGRADO (--!nonstrict.txt)
+-- ============================================
+local PainelFlutuante = { gui = nil, aberto = false }
+
+local function criarPainelFlutuante()
+    if PainelFlutuante.gui then return PainelFlutuante.gui end
+
+    -- ===== Painel Arrastável + Toggle | TP seco + Loop contínuo =====
+    local RESPAWN_WAIT = 2
+
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "TweenTPPanel"
+    screenGui.ResetOnSpawn = false
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.IgnoreGuiInset = true
+    screenGui.DisplayOrder = 50
+    screenGui.Enabled = false
+    screenGui.Parent = PlayerGui
+
+    local panel = Instance.new("Frame")
+    panel.Size = UDim2.new(0, 280, 0, 118)
+    panel.Position = UDim2.new(0, 20, 0, 100)
+    panel.BackgroundColor3 = Color3.fromRGB(28, 30, 38)
+    panel.BorderSizePixel = 0
+    panel.Active = true
+    panel.Draggable = true
+    panel.Parent = screenGui
+    Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 10)
+
+    local stroke = Instance.new("UIStroke", panel)
+    stroke.Color = Color3.fromRGB(70, 75, 90)
+    stroke.Thickness = 1
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -20, 0, 20)
+    title.Position = UDim2.new(0, 12, 0, 4)
+    title.BackgroundTransparency = 1
+    title.Text = "TP  •  Nests (loop)"
+    title.TextColor3 = Color3.fromRGB(230, 230, 240)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 13
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = panel
+
+    local toggleBg = Instance.new("Frame")
+    toggleBg.Size = UDim2.new(0, 50, 0, 26)
+    toggleBg.Position = UDim2.new(0, 15, 0, 30)
+    toggleBg.BackgroundColor3 = Color3.fromRGB(60, 62, 72)
+    toggleBg.BorderSizePixel = 0
+    toggleBg.Active = true
+    toggleBg.Parent = panel
+    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 22, 0, 22)
+    knob.Position = UDim2.new(0, 2, 0, 2)
+    knob.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
+    knob.BorderSizePixel = 0
+    knob.Parent = toggleBg
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local statusLabel = Instance.new("TextLabel")
+    statusLabel.Size = UDim2.new(0, 100, 0, 20)
+    statusLabel.Position = UDim2.new(0, 80, 0, 33)
+    statusLabel.BackgroundTransparency = 1
+    statusLabel.Text = "OFF"
+    statusLabel.TextColor3 = Color3.fromRGB(220, 90, 90)
+    statusLabel.Font = Enum.Font.GothamBold
+    statusLabel.TextSize = 14
+    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    statusLabel.Parent = panel
+
+    local testBtn = Instance.new("TextButton")
+    testBtn.Size = UDim2.new(0, 90, 0, 26)
+    testBtn.Position = UDim2.new(1, -100, 0, 30)
+    testBtn.BackgroundColor3 = Color3.fromRGB(60, 90, 160)
+    testBtn.BorderSizePixel = 0
+    testBtn.Text = "TP TESTE"
+    testBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
+    testBtn.Font = Enum.Font.GothamBold
+    testBtn.TextSize = 12
+    testBtn.Parent = panel
+    Instance.new("UICorner", testBtn).CornerRadius = UDim.new(0, 6)
+
+    local footerHolder = Instance.new("Frame")
+    footerHolder.Size = UDim2.new(1, -20, 0, 52)
+    footerHolder.Position = UDim2.new(0, 10, 0, 62)
+    footerHolder.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
+    footerHolder.BorderSizePixel = 0
+    footerHolder.Parent = panel
+    Instance.new("UICorner", footerHolder).CornerRadius = UDim.new(0, 6)
+
+    local footerScroll = Instance.new("ScrollingFrame")
+    footerScroll.Size = UDim2.new(1, -8, 1, -8)
+    footerScroll.Position = UDim2.new(0, 4, 0, 4)
+    footerScroll.BackgroundTransparency = 1
+    footerScroll.BorderSizePixel = 0
+    footerScroll.ScrollBarThickness = 3
+    footerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    footerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    footerScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 95, 110)
+    footerScroll.Parent = footerHolder
+
+    local footerList = Instance.new("UIListLayout")
+    footerList.Padding = UDim.new(0, 1)
+    footerList.SortOrder = Enum.SortOrder.LayoutOrder
+    footerList.Parent = footerScroll
+
+    local MAX_LINES = 30
+    local lineCount = 0
+
+    local function log(msg, color)
+        lineCount += 1
+        local lbl = Instance.new("TextLabel")
+        lbl.Size = UDim2.new(1, 0, 0, 12)
+        lbl.BackgroundTransparency = 1
+        lbl.Text = "• " .. tostring(msg)
+        lbl.TextColor3 = color or Color3.fromRGB(180, 200, 220)
+        lbl.Font = Enum.Font.Code
+        lbl.TextSize = 10
+        lbl.TextXAlignment = Enum.TextXAlignment.Left
+        lbl.LayoutOrder = lineCount
+        lbl.Parent = footerScroll
+        footerScroll.CanvasPosition = Vector2.new(0, math.huge)
+        local labels = {}
+        for _, c in ipairs(footerScroll:GetChildren()) do
+            if c:IsA("TextLabel") then table.insert(labels, c) end
+        end
+        if #labels > MAX_LINES then
+            table.sort(labels, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
+            labels[1]:Destroy()
+        end
+    end
+
+    log("Script carregado.", Color3.fromRGB(120, 220, 160))
+
+    local enabled = false
+
+    local function findNests()
+        local guardAreas
+        for _, d in ipairs(Workspace:GetDescendants()) do
+            if d.Name == "GuardAreas" then guardAreas = d; break end
+        end
+        if not guardAreas then
+            log("GuardAreas NAO encontrado.", Color3.fromRGB(240, 120, 120))
+            return nil
+        end
+        local forest
+        for _, d in ipairs(guardAreas:GetDescendants()) do
+            if d.Name == "Forest" then forest = d; break end
+        end
+        if not forest then
+            log("Forest NAO encontrado.", Color3.fromRGB(240, 120, 120))
+            return nil
+        end
+        local nests = forest:FindFirstChild("Nests")
+        if not nests then
+            for _, d in ipairs(forest:GetDescendants()) do
+                if d.Name == "Nests" then nests = d; break end
+            end
+        end
+        if not nests then
+            log("Nests NAO encontrado.", Color3.fromRGB(240, 120, 120))
+            return nil
+        end
+        return nests
+    end
+
+    local function getNestsPosition(doLog)
+        local nests = findNests()
+        if not nests then return nil end
+        local pos
+        if nests:IsA("Model") then
+            local ok, cf, size = pcall(function() return nests:GetBoundingBox() end)
+            if ok and cf and size then
+                local topY = cf.Position.Y + (size.Y / 2) + 4
+                pos = Vector3.new(cf.Position.X, topY, cf.Position.Z)
+            else
+                local pp = nests.PrimaryPart or nests:FindFirstChildWhichIsA("BasePart", true)
+                if pp then pos = pp.Position + Vector3.new(0, pp.Size.Y/2 + 4, 0) end
+            end
+        elseif nests:IsA("BasePart") then
+            pos = nests.Position + Vector3.new(0, nests.Size.Y/2 + 4, 0)
+        end
+        if not pos then
+            if doLog then log("Nests sem posicao.", Color3.fromRGB(240, 120, 120)) end
+            return nil
+        end
+        if doLog then
+            log(string.format("Destino: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z),
+                Color3.fromRGB(255, 220, 120))
+        end
+        return pos
+    end
+
+    local function isSmartPrompt(prompt)
+        if not prompt or not prompt.Parent then return false end
+        if prompt.Name == "CarryAreaEgg" then return true end
+        if prompt.Parent.Name == "SmartPromptPart" then return true end
+        local p, depth = prompt.Parent, 0
+        while p and p ~= Workspace and depth < 15 do
+            if p.Name == "SmartPromptPart" then return true end
+            p = p.Parent
+            depth += 1
+        end
+        return false
+    end
+
+    local loopConn  = nil
+    local cachedPos = nil
+
+    local function stopLoop()
+        if loopConn then
+            loopConn:Disconnect()
+            loopConn = nil
+            log("Loop parado.", Color3.fromRGB(220, 180, 90))
+        end
+    end
+
+    local function startLoop()
+        stopLoop()
+        cachedPos = getNestsPosition(true)
+        if not cachedPos then return end
+
+        log("Loop iniciado.", Color3.fromRGB(120, 220, 160))
+
+        loopConn = RunService.Heartbeat:Connect(function()
+            if not enabled then
+                stopLoop()
+                return
+            end
+            local char = LocalPlayer.Character
+            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp and cachedPos then
+                hrp.CFrame = CFrame.new(cachedPos) * (hrp.CFrame - hrp.CFrame.Position)
+            end
+        end)
+    end
+
+    local function setToggle(state)
+        enabled = state
+        if state then
+            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 175, 100)}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -24, 0, 2)}):Play()
+            statusLabel.Text = "ON"
+            statusLabel.TextColor3 = Color3.fromRGB(90, 220, 130)
+            log("Ativado.", Color3.fromRGB(120, 220, 160))
+        else
+            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 62, 72)}):Play()
+            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0, 2)}):Play()
+            statusLabel.Text = "OFF"
+            statusLabel.TextColor3 = Color3.fromRGB(220, 90, 90)
+            stopLoop()
+            log("Desativado.", Color3.fromRGB(220, 150, 90))
+        end
+    end
+
+    toggleBg.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            setToggle(not enabled)
+        end
+    end)
+
+    local function doTeleport(withLoop)
+        cachedPos = getNestsPosition(true)
+        if not cachedPos then return end
+
+        local char = LocalPlayer.Character
+        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then
+            log("Sem HRP.", Color3.fromRGB(240, 120, 120))
+            return
+        end
+
+        hrp.CFrame = CFrame.new(cachedPos) * (hrp.CFrame - hrp.CFrame.Position)
+        log("TP feito.", Color3.fromRGB(120, 220, 160))
+
+        if withLoop then
+            startLoop()
+        end
+    end
+
+    local function tryTeleport(prompt, triggeringPlayer)
+        log("Prompt disparou: " .. (prompt and prompt.Name or "?"),
+            Color3.fromRGB(200, 200, 200))
+        if not enabled then return end
+        if triggeringPlayer and triggeringPlayer ~= LocalPlayer then return end
+        if not isSmartPrompt(prompt) then
+            log("Nao e SmartPrompt. Ignorando.", Color3.fromRGB(220, 180, 90))
+            return
+        end
+        doTeleport(true)
+    end
+
+    local watched = setmetatable({}, {__mode = "k"})
+
+    local function watchPrompt(prompt)
+        if watched[prompt] then return end
+        watched[prompt] = true
+        prompt.Triggered:Connect(function(triggeringPlayer)
+            tryTeleport(prompt, triggeringPlayer)
+        end)
+    end
+
+    for _, d in ipairs(Workspace:GetDescendants()) do
+        if d:IsA("ProximityPrompt") then watchPrompt(d) end
+    end
+
+    Workspace.DescendantAdded:Connect(function(d)
+        if d:IsA("ProximityPrompt") then watchPrompt(d) end
+    end)
+
+    ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeringPlayer)
+        tryTeleport(prompt, triggeringPlayer)
+    end)
+    ProximityPromptService.PromptButtonHoldEnded:Connect(function(prompt, triggeringPlayer)
+        tryTeleport(prompt, triggeringPlayer)
+    end)
+
+    testBtn.MouseButton1Click:Connect(function()
+        log("TP TESTE clicado.", Color3.fromRGB(180, 200, 255))
+        doTeleport(true)
+    end)
+
+    local lastDeathCFrame = nil
+
+    local function hookCharacter(char)
+        local humanoid = char:WaitForChild("Humanoid", 10)
+        if not humanoid then return end
+        humanoid.Died:Connect(function()
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                lastDeathCFrame = hrp.CFrame
+                log(string.format("Morreu em %.1f, %.1f, %.1f",
+                    lastDeathCFrame.Position.X,
+                    lastDeathCFrame.Position.Y,
+                    lastDeathCFrame.Position.Z),
+                    Color3.fromRGB(240, 150, 150))
+            end
+            stopLoop()
+        end)
+    end
+
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        hookCharacter(char)
+        if not enabled or not lastDeathCFrame then return end
+        local savedCF = lastDeathCFrame
+
+        task.spawn(function()
+            task.wait(RESPAWN_WAIT)
+            local hrp = char:WaitForChild("HumanoidRootPart", 5)
+            if not hrp then return end
+            if hrp.Parent then
+                hrp.CFrame = savedCF
+                log("Respawn reposicionado (sem loop).", Color3.fromRGB(120, 220, 160))
+            end
+        end)
+    end)
+
+    if LocalPlayer.Character then
+        hookCharacter(LocalPlayer.Character)
+    end
+
+    log("Pronto. Prompts monitorados.", Color3.fromRGB(120, 220, 160))
+
+    PainelFlutuante.gui = screenGui
+    return screenGui
+end
+
+local function togglePainelFlutuante()
+    if not PainelFlutuante.gui then
+        criarPainelFlutuante()
+    end
+    PainelFlutuante.aberto = not PainelFlutuante.aberto
+    PainelFlutuante.gui.Enabled = PainelFlutuante.aberto
+    if PainelFlutuante.aberto then
+        Toast("Painel Flutuante ON", VERDE)
+    else
+        Toast("Painel Flutuante OFF", AMARELO)
+    end
+end
+
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
 faixaBase.Size = UDim2.new(1, -16, 0, 2)
@@ -1641,6 +2030,12 @@ btnReset.MouseButton1Click:Connect(function()
     Destino.usarSpawn = true
 end)
 
+-- Callback do Painel Flutuante
+btnFlutuante.MouseButton1Click:Connect(function()
+    bounceFlutuante()
+    togglePainelFlutuante()
+end)
+
 -- Botão TP-AREA
 btnTpArea2.MouseButton1Click:Connect(function()
     executarTpAreaIntegrado(
@@ -1665,6 +2060,8 @@ UserInputService.InputBegan:Connect(function(i, gp)
         AntiKB = not AntiKB
         if AntiKB then Toast("Anti-KB ON", VERDE)
         else ultimaPosKB = nil Toast("Anti-KB OFF", AMARELO) end
+    elseif i.KeyCode == Enum.KeyCode.P then
+        togglePainelFlutuante()
     end
 end)
 
@@ -1775,6 +2172,22 @@ task.spawn(function()
             bordaDst.Color                = Color3.fromRGB(80, 200, 240)
             labelDst.TextColor3           = Color3.fromRGB(180, 230, 255)
             labelDst.Text                 = "✅ DESTINO SALVO"
+        end
+
+        if PainelFlutuante.aberto then
+            contFlutuante.BackgroundColor3   = Color3.fromRGB(20, 55, 28)
+            barraFlutuante.BackgroundColor3  = VERDE
+            bordaFlutuante.Color             = VERDE
+            labelFlutuante.TextColor3        = Color3.fromRGB(180, 255, 200)
+            setaFlutuante.TextColor3         = VERDE
+            labelFlutuante.Text              = "🪟 PAINEL FLUTUANTE  [ON]"
+        else
+            contFlutuante.BackgroundColor3   = BG_BTN
+            barraFlutuante.BackgroundColor3  = ROXO
+            bordaFlutuante.Color             = ROXO_DARK
+            labelFlutuante.TextColor3        = Color3.fromRGB(230, 220, 255)
+            setaFlutuante.TextColor3         = ROXO
+            labelFlutuante.Text              = "🪟 PAINEL FLUTUANTE"
         end
 
         if espOvosAtivo then
