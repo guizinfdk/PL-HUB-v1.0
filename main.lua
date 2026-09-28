@@ -575,11 +575,11 @@ function Toast(msg, cor)
     end)
 end
 
--- Holder
+-- Holder (aumentado pra caber o EggBox)
 local holder = Instance.new("Frame")
 holder.Name = "Holder"
-holder.Size = UDim2.new(0, 200, 0, 220)
-holder.Position = UDim2.new(0.5, -100, 0.1, 0)
+holder.Size = UDim2.new(0, 280, 0, 400)
+holder.Position = UDim2.new(0.5, -140, 0.05, 0)
 holder.BackgroundTransparency = 1
 holder.Active = true
 holder.Draggable = true
@@ -1056,7 +1056,7 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- ESP STATE (só lista, sem billboard)
+-- ESP STATE (só lista + best egg)
 -- ============================================
 local espOvosAtivo     = false
 local maxEspDistance   = 500
@@ -1125,7 +1125,7 @@ local function GetPetIcon(record)
 end
 
 -- ============================================
--- ABA 👁️ — VISUALIZADOR DETALHADO
+-- ABA 👁️ — VISUALIZADOR DETALHADO + EGG BOX
 -- ============================================
 local eyeHeaderLbl = Instance.new("TextLabel")
 eyeHeaderLbl.Size = UDim2.new(1, -16, 0, 14)
@@ -1139,9 +1139,99 @@ eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos | 0 ovos"
 eyeHeaderLbl.ZIndex = 4
 eyeHeaderLbl.Parent = containerEye
 
+-- ============================================
+-- EGG BOX — melhor ovo/pet disponível
+-- ============================================
+local eggBox = Instance.new("Frame")
+eggBox.Name = "EggBox"
+eggBox.Size = UDim2.new(1, -16, 0, 70)
+eggBox.Position = UDim2.new(0, 8, 0, 18)
+eggBox.BackgroundColor3 = Color3.fromRGB(20, 23, 30)
+eggBox.BorderSizePixel = 0
+eggBox.ZIndex = 4
+eggBox.Parent = containerEye
+Instance.new("UICorner", eggBox).CornerRadius = UDim.new(0, 8)
+
+local eggBoxStroke = Instance.new("UIStroke")
+eggBoxStroke.Color = Color3.fromRGB(46, 204, 113)
+eggBoxStroke.Thickness = 1.5
+eggBoxStroke.Transparency = 0.4
+eggBoxStroke.Parent = eggBox
+
+-- Ícone do pet
+local petIconFrame = Instance.new("Frame")
+petIconFrame.Name = "PetIconFrame"
+petIconFrame.Size = UDim2.new(0, 54, 0, 54)
+petIconFrame.Position = UDim2.new(0, 8, 0.5, -27)
+petIconFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
+petIconFrame.BorderSizePixel = 0
+petIconFrame.ZIndex = 5
+petIconFrame.Parent = eggBox
+Instance.new("UICorner", petIconFrame).CornerRadius = UDim.new(0, 6)
+
+local petIconStroke = Instance.new("UIStroke")
+petIconStroke.Color = Color3.fromRGB(46, 204, 113)
+petIconStroke.Thickness = 1
+petIconStroke.Transparency = 0.5
+petIconStroke.Parent = petIconFrame
+
+local petIcon = Instance.new("ImageLabel")
+petIcon.Name = "PetIcon"
+petIcon.Size = UDim2.new(1, -6, 1, -6)
+petIcon.Position = UDim2.new(0, 3, 0, 3)
+petIcon.BackgroundTransparency = 1
+petIcon.ScaleType = Enum.ScaleType.Fit
+petIcon.Image = ""
+petIcon.ZIndex = 6
+petIcon.Parent = petIconFrame
+
+-- Nome do ovo
+local eggName = Instance.new("TextLabel")
+eggName.Name = "EggName"
+eggName.Size = UDim2.new(1, -80, 0, 18)
+eggName.Position = UDim2.new(0, 70, 0, 8)
+eggName.BackgroundTransparency = 1
+eggName.Font = Enum.Font.GothamBold
+eggName.TextSize = 13
+eggName.TextColor3 = Color3.fromRGB(240, 240, 245)
+eggName.TextXAlignment = Enum.TextXAlignment.Left
+eggName.TextTruncate = Enum.TextTruncate.AtEnd
+eggName.Text = "Nenhum ovo detectado"
+eggName.ZIndex = 5
+eggName.Parent = eggBox
+
+-- Raridade
+local eggRarity = Instance.new("TextLabel")
+eggRarity.Name = "EggRarity"
+eggRarity.Size = UDim2.new(1, -80, 0, 14)
+eggRarity.Position = UDim2.new(0, 70, 0, 28)
+eggRarity.BackgroundTransparency = 1
+eggRarity.Font = Enum.Font.GothamBold
+eggRarity.TextSize = 11
+eggRarity.TextColor3 = Color3.fromRGB(46, 204, 113)
+eggRarity.TextXAlignment = Enum.TextXAlignment.Left
+eggRarity.Text = "★ —"
+eggRarity.ZIndex = 5
+eggRarity.Parent = eggBox
+
+-- Distância + Score
+local eggInfo = Instance.new("TextLabel")
+eggInfo.Name = "EggInfo"
+eggInfo.Size = UDim2.new(1, -80, 0, 12)
+eggInfo.Position = UDim2.new(0, 70, 0, 46)
+eggInfo.BackgroundTransparency = 1
+eggInfo.Font = Enum.Font.Gotham
+eggInfo.TextSize = 10
+eggInfo.TextColor3 = Color3.fromRGB(170, 180, 200)
+eggInfo.TextXAlignment = Enum.TextXAlignment.Left
+eggInfo.Text = "📏 —m  ⚖ —"
+eggInfo.ZIndex = 5
+eggInfo.Parent = eggBox
+
+-- Botão toggle ESP (dentro da aba 👁️)
 local btnEyeToggle = Instance.new("TextButton")
 btnEyeToggle.Size = UDim2.new(1, -16, 0, 26)
-btnEyeToggle.Position = UDim2.new(0, 8, 0, 18)
+btnEyeToggle.Position = UDim2.new(0, 8, 0, 94)
 btnEyeToggle.BackgroundColor3 = BG_BTN
 btnEyeToggle.BorderSizePixel = 0
 btnEyeToggle.Font = Enum.Font.GothamBold
@@ -1152,9 +1242,10 @@ btnEyeToggle.ZIndex = 4
 btnEyeToggle.Parent = containerEye
 Instance.new("UICorner", btnEyeToggle).CornerRadius = UDim.new(0, 6)
 
+-- Botão filtro
 local btnEyeFiltro = Instance.new("TextButton")
 btnEyeFiltro.Size = UDim2.new(1, -16, 0, 26)
-btnEyeFiltro.Position = UDim2.new(0, 8, 0, 48)
+btnEyeFiltro.Position = UDim2.new(0, 8, 0, 124)
 btnEyeFiltro.BackgroundColor3 = BG_BTN
 btnEyeFiltro.BorderSizePixel = 0
 btnEyeFiltro.Font = Enum.Font.GothamBold
@@ -1191,10 +1282,11 @@ btnEyeToggle.MouseButton1Click:Connect(function()
     end
 end)
 
+-- Scroll de cards (abaixo dos controles)
 local scrollEye = Instance.new("ScrollingFrame")
 scrollEye.Name = "ScrollEye"
-scrollEye.Size = UDim2.new(1, 0, 1, -84)
-scrollEye.Position = UDim2.new(0, 0, 0, 78)
+scrollEye.Size = UDim2.new(1, 0, 1, -156)
+scrollEye.Position = UDim2.new(0, 0, 0, 154)
 scrollEye.BackgroundTransparency = 1
 scrollEye.BorderSizePixel = 0
 scrollEye.ScrollBarThickness = 4
@@ -1252,7 +1344,7 @@ local function atualizarListaEye(records)
 
         local card = Instance.new("Frame")
         card.Size             = UDim2.new(1, -8, 0, 64)
-        card.BackgroundColor3 = BG_BTN
+        card.BackgroundColor3 = Color3.fromRGB(20, 23, 30)
         card.BorderSizePixel  = 0
         card.LayoutOrder      = i
         card.Parent           = scrollEye
@@ -1277,7 +1369,7 @@ local function atualizarListaEye(records)
         local imgFrame = Instance.new("Frame")
         imgFrame.Size             = UDim2.new(0, 48, 0, 48)
         imgFrame.Position         = UDim2.new(0, 12, 0, 8)
-        imgFrame.BackgroundColor3 = BG
+        imgFrame.BackgroundColor3 = Color3.fromRGB(12, 14, 18)
         imgFrame.BorderSizePixel  = 0
         imgFrame.Parent           = card
 
@@ -1335,10 +1427,10 @@ local function atualizarListaEye(records)
             local badge = Instance.new("TextLabel")
             badge.Size              = UDim2.new(0, 56, 0, 12)
             badge.Position          = UDim2.new(1, -62, 1, -16)
-            badge.BackgroundColor3 = VERDE
+            badge.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
             badge.BorderSizePixel  = 0
             badge.Text              = "PRÓXIMO"
-            badge.TextColor3        = BG
+            badge.TextColor3        = Color3.fromRGB(12, 14, 18)
             badge.Font              = Enum.Font.GothamBlack
             badge.TextSize          = 8
             badge.Parent            = card
@@ -1346,6 +1438,46 @@ local function atualizarListaEye(records)
             Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 3)
         end
     end
+end
+
+-- Atualiza a EggBox com o melhor ovo
+local function atualizarEggBox(bestRecord)
+    if not bestRecord then
+        eggName.Text   = "Nenhum ovo detectado"
+        eggName.TextColor3 = Color3.fromRGB(150, 150, 160)
+        eggRarity.Text = "★ —"
+        eggRarity.TextColor3 = Color3.fromRGB(100, 100, 110)
+        eggInfo.Text   = "📏 —m  ⚖ —"
+        petIcon.Image  = ""
+        petIcon.Visible = false
+        eggBoxStroke.Color = Color3.fromRGB(46, 204, 113)
+        petIconStroke.Color = Color3.fromRGB(46, 204, 113)
+        return
+    end
+
+    local rarityName = bestRecord.rarity or "Common"
+    local score      = RARITY_SCORE_MAP[rarityName] or 100
+    local rarCor     = RARITY_COLOR[rarityName] or Color3.fromRGB(46, 204, 113)
+
+    eggName.Text   = bestRecord.name or "Ovo"
+    eggName.TextColor3 = Color3.fromRGB(240, 240, 245)
+
+    eggRarity.Text = "★ " .. rarityName
+    eggRarity.TextColor3 = rarCor
+
+    eggInfo.Text = string.format("📏 %dm  ⚖ %d", bestRecord.dist or 0, score)
+
+    local iconId = GetPetIcon(bestRecord)
+    if iconId then
+        petIcon.Image = iconId
+        petIcon.Visible = true
+    else
+        petIcon.Image = ""
+        petIcon.Visible = false
+    end
+
+    eggBoxStroke.Color = rarCor
+    petIconStroke.Color = rarCor
 end
 
 -- ============================================
@@ -1507,7 +1639,6 @@ local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounce
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
     criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
--- Botão do Painel Flutuante
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
     criarBotaoCyber(30, "🌌 TP-EGG", 8)
@@ -1944,8 +2075,8 @@ labelStatus.Parent = rodape
 -- Minimizar
 local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, faixaBase, rodape }
 local minimizado = false
-local tamanhoNormal = UDim2.new(0, 200, 0, 220)
-local tamanhoMin    = UDim2.new(0, 200, 0, 36)
+local tamanhoNormal = UDim2.new(0, 280, 0, 400)
+local tamanhoMin    = UDim2.new(0, 280, 0, 36)
 
 btnMin.MouseButton1Click:Connect(function()
     minimizado = not minimizado
@@ -2012,13 +2143,11 @@ btnReset.MouseButton1Click:Connect(function()
     Destino.usarSpawn = true
 end)
 
--- Callback do Painel Flutuante
 btnFlutuante.MouseButton1Click:Connect(function()
     bounceFlutuante()
     togglePainelFlutuante()
 end)
 
--- Botão TP-AREA
 btnTpArea2.MouseButton1Click:Connect(function()
     executarTpAreaIntegrado(
         AreaSelecionada,
@@ -2202,10 +2331,10 @@ task.spawn(function()
     end
 end)
 
--- ESP LOOP PRINCIPAL (só lista, sem billboard)
+-- ESP LOOP PRINCIPAL (lista + melhor ovo)
 task.spawn(function()
     while gui.Parent do
-        task.wait(0.2)
+        task.wait(0.5)
         pcall(function()
             local char = LocalPlayer.Character
             local hrp  = char and char:FindFirstChild("HumanoidRootPart")
@@ -2215,6 +2344,8 @@ task.spawn(function()
                 local ok, snapshot = pcall(EggState.ReadFieldEggs)
                 if ok and snapshot and snapshot.Records then
                     local visiveis = {}
+                    local melhorOvo = nil
+                    local melhorScore = -1
 
                     for _, record in ipairs(snapshot.Records) do
                         if record.State == "Slot" and record.BoundsCFrame then
@@ -2223,25 +2354,38 @@ task.spawn(function()
 
                             if dist <= maxEspDistance then
                                 local rarityName = GetEggRarityInfo(record)
+                                local score = RARITY_SCORE_MAP[rarityName] or 100
 
                                 if targetRarityName == "Todos"
                                 or rarityName:lower() == targetRarityName:lower() then
 
-                                    table.insert(visiveis, {
+                                    local dados = {
                                         name   = record.AssetCategory or record.Pet or "Ovo",
                                         rarity = rarityName,
                                         dist   = dist,
                                         icon   = GetPetIcon(record),
-                                    })
+                                        _record = record,
+                                    }
+                                    table.insert(visiveis, dados)
+
+                                    if score > melhorScore then
+                                        melhorScore = score
+                                        melhorOvo = dados
+                                    end
                                 end
                             end
                         end
                     end
 
                     atualizarListaEye(visiveis)
+                    atualizarEggBox(melhorOvo)
+                else
+                    atualizarListaEye({})
+                    atualizarEggBox(nil)
                 end
             else
                 atualizarListaEye({})
+                atualizarEggBox(nil)
             end
         end)
     end
