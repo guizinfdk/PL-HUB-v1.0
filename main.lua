@@ -697,7 +697,7 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- TabBar
+-- TabBar (5 abas)
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, -16, 0, 22)
 tabBar.Position = UDim2.new(0, 8, 0, 38)
@@ -717,11 +717,11 @@ tabLayout.Parent = tabBar
 
 local function criarTabBtn(texto, ordem)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1/4, -3, 1, -4)
+    b.Size = UDim2.new(1/5, -3, 1, -4)
     b.BackgroundColor3 = BG
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
-    b.TextSize = 13
+    b.TextSize = 12
     b.TextColor3 = Color3.fromRGB(200, 180, 220)
     b.Text = texto
     b.LayoutOrder = ordem
@@ -731,10 +731,11 @@ local function criarTabBtn(texto, ordem)
     return b
 end
 
-local btnTabFunc  = criarTabBtn("🎯", 1)
-local btnTabTps   = criarTabBtn("🌀", 2)
-local btnTabSpeed = criarTabBtn("⚡", 3)
-local btnTabEye   = criarTabBtn("👁️", 4)
+local btnTabFunc   = criarTabBtn("🎯", 1)
+local btnTabTps    = criarTabBtn("🌀", 2)
+local btnTabSpeed  = criarTabBtn("⚡", 3)
+local btnTabEye    = criarTabBtn("👁️", 4)
+local btnTabTpEgg  = criarTabBtn("🥚", 5)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -767,6 +768,14 @@ containerEye.BackgroundTransparency = 1
 containerEye.ZIndex = 3
 containerEye.Visible = false
 containerEye.Parent = menu
+
+local containerTpEgg = Instance.new("Frame")
+containerTpEgg.Size = UDim2.new(1, 0, 1, -98)
+containerTpEgg.Position = UDim2.new(0, 0, 0, 64)
+containerTpEgg.BackgroundTransparency = 1
+containerTpEgg.ZIndex = 3
+containerTpEgg.Visible = false
+containerTpEgg.Parent = menu
 
 -- Scroll Funções
 local scroll = Instance.new("ScrollingFrame")
@@ -1366,14 +1375,355 @@ local function atualizarListaEye(records)
 end
 
 -- ============================================
+-- ABA 🥚 TP-EGG (nova aba)
+-- ============================================
+local tpEggEnabled = false
+
+-- Header (status)
+local tpEggStatus = Instance.new("TextLabel")
+tpEggStatus.Size = UDim2.new(1, -16, 0, 16)
+tpEggStatus.Position = UDim2.new(0, 8, 0, 0)
+tpEggStatus.BackgroundTransparency = 1
+tpEggStatus.Font = Enum.Font.GothamBold
+tpEggStatus.TextSize = 10
+tpEggStatus.TextColor3 = Color3.fromRGB(180, 220, 255)
+tpEggStatus.TextXAlignment = Enum.TextXAlignment.Left
+tpEggStatus.Text = "TP-EGG: Inativo"
+tpEggStatus.ZIndex = 4
+tpEggStatus.Parent = containerTpEgg
+
+-- Botão toggle (ON/OFF)
+local btnTpEggToggle = Instance.new("TextButton")
+btnTpEggToggle.Size = UDim2.new(1, -16, 0, 30)
+btnTpEggToggle.Position = UDim2.new(0, 8, 0, 22)
+btnTpEggToggle.BackgroundColor3 = BG_BTN
+btnTpEggToggle.BorderSizePixel = 0
+btnTpEggToggle.Font = Enum.Font.GothamBold
+btnTpEggToggle.TextSize = 12
+btnTpEggToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
+btnTpEggToggle.Text = "🌀 TP-EGG: OFF"
+btnTpEggToggle.ZIndex = 4
+btnTpEggToggle.Parent = containerTpEgg
+Instance.new("UICorner", btnTpEggToggle).CornerRadius = UDim.new(0, 7)
+
+local strokeTpEgg = Instance.new("UIStroke")
+strokeTpEgg.Color = ROXO_DARK
+strokeTpEgg.Thickness = 1
+strokeTpEgg.Parent = btnTpEggToggle
+
+-- Botão TP TESTE
+local btnTpEggTest = Instance.new("TextButton")
+btnTpEggTest.Size = UDim2.new(1, -16, 0, 26)
+btnTpEggTest.Position = UDim2.new(0, 8, 0, 58)
+btnTpEggTest.BackgroundColor3 = Color3.fromRGB(60, 90, 160)
+btnTpEggTest.BorderSizePixel = 0
+btnTpEggTest.Font = Enum.Font.GothamBold
+btnTpEggTest.TextSize = 11
+btnTpEggTest.TextColor3 = Color3.fromRGB(240, 240, 255)
+btnTpEggTest.Text = "TP TESTE"
+btnTpEggTest.ZIndex = 4
+btnTpEggTest.Parent = containerTpEgg
+Instance.new("UICorner", btnTpEggTest).CornerRadius = UDim.new(0, 6)
+
+-- Log de status (scroll)
+local tpEggLogHolder = Instance.new("Frame")
+tpEggLogHolder.Size = UDim2.new(1, -16, 1, -98)
+tpEggLogHolder.Position = UDim2.new(0, 8, 0, 92)
+tpEggLogHolder.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
+tpEggLogHolder.BorderSizePixel = 0
+tpEggLogHolder.ZIndex = 3
+tpEggLogHolder.Parent = containerTpEgg
+Instance.new("UICorner", tpEggLogHolder).CornerRadius = UDim.new(0, 6)
+
+local tpEggLogScroll = Instance.new("ScrollingFrame")
+tpEggLogScroll.Size = UDim2.new(1, -8, 1, -8)
+tpEggLogScroll.Position = UDim2.new(0, 4, 0, 4)
+tpEggLogScroll.BackgroundTransparency = 1
+tpEggLogScroll.BorderSizePixel = 0
+tpEggLogScroll.ScrollBarThickness = 3
+tpEggLogScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+tpEggLogScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+tpEggLogScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 95, 110)
+tpEggLogScroll.Parent = tpEggLogHolder
+
+local tpEggLogList = Instance.new("UIListLayout")
+tpEggLogList.Padding = UDim.new(0, 1)
+tpEggLogList.SortOrder = Enum.SortOrder.LayoutOrder
+tpEggLogList.Parent = tpEggLogScroll
+
+local TPEGG_MAX_LINES = 30
+local tpEggLineCount = 0
+
+local function tpEggLog(msg, color)
+    tpEggLineCount += 1
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, 0, 0, 12)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = "• " .. tostring(msg)
+    lbl.TextColor3 = color or Color3.fromRGB(180, 200, 220)
+    lbl.Font = Enum.Font.Code
+    lbl.TextSize = 10
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.LayoutOrder = tpEggLineCount
+    lbl.Parent = tpEggLogScroll
+    tpEggLogScroll.CanvasPosition = Vector2.new(0, math.huge)
+    local labels = {}
+    for _, c in ipairs(tpEggLogScroll:GetChildren()) do
+        if c:IsA("TextLabel") then table.insert(labels, c) end
+    end
+    if #labels > TPEGG_MAX_LINES then
+        table.sort(labels, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
+        labels[1]:Destroy()
+    end
+end
+
+tpEggLog("TP-EGG carregado.", Color3.fromRGB(120, 220, 160))
+
+-- BUSCA GuardAreas > Forest > Nests
+local function tpEggFindNests()
+    local guardAreas
+    for _, d in ipairs(Workspace:GetDescendants()) do
+        if d.Name == "GuardAreas" then guardAreas = d; break end
+    end
+    if not guardAreas then
+        tpEggLog("GuardAreas NAO encontrado.", Color3.fromRGB(240, 120, 120))
+        return nil
+    end
+    local forest
+    for _, d in ipairs(guardAreas:GetDescendants()) do
+        if d.Name == "Forest" then forest = d; break end
+    end
+    if not forest then
+        tpEggLog("Forest NAO encontrado.", Color3.fromRGB(240, 120, 120))
+        return nil
+    end
+    local nests = forest:FindFirstChild("Nests")
+    if not nests then
+        for _, d in ipairs(forest:GetDescendants()) do
+            if d.Name == "Nests" then nests = d; break end
+        end
+    end
+    if not nests then
+        tpEggLog("Nests NAO encontrado.", Color3.fromRGB(240, 120, 120))
+        return nil
+    end
+    return nests
+end
+
+local function tpEggGetNestsPosition(doLog)
+    local nests = tpEggFindNests()
+    if not nests then return nil end
+    local pos
+    if nests:IsA("Model") then
+        local ok, cf, size = pcall(function() return nests:GetBoundingBox() end)
+        if ok and cf and size then
+            local topY = cf.Position.Y + (size.Y / 2) + 4
+            pos = Vector3.new(cf.Position.X, topY, cf.Position.Z)
+        else
+            local pp = nests.PrimaryPart or nests:FindFirstChildWhichIsA("BasePart", true)
+            if pp then pos = pp.Position + Vector3.new(0, pp.Size.Y/2 + 4, 0) end
+        end
+    elseif nests:IsA("BasePart") then
+        pos = nests.Position + Vector3.new(0, nests.Size.Y/2 + 4, 0)
+    end
+    if not pos then
+        if doLog then tpEggLog("Nests sem posicao.", Color3.fromRGB(240, 120, 120)) end
+        return nil
+    end
+    if doLog then
+        tpEggLog(string.format("Destino: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z),
+            Color3.fromRGB(255, 220, 120))
+    end
+    return pos
+end
+
+local function tpEggIsSmartPrompt(prompt)
+    if not prompt or not prompt.Parent then return false end
+    if prompt.Name == "CarryAreaEgg" then return true end
+    if prompt.Parent.Name == "SmartPromptPart" then return true end
+    local p, depth = prompt.Parent, 0
+    while p and p ~= Workspace and depth < 15 do
+        if p.Name == "SmartPromptPart" then return true end
+        p = p.Parent
+        depth += 1
+    end
+    return false
+end
+
+-- LOOP CONTÍNUO
+local tpEggLoopConn  = nil
+local tpEggCachedPos = nil
+
+local function tpEggStopLoop()
+    if tpEggLoopConn then
+        tpEggLoopConn:Disconnect()
+        tpEggLoopConn = nil
+        tpEggLog("Loop parado.", Color3.fromRGB(220, 180, 90))
+    end
+end
+
+local function tpEggStartLoop()
+    tpEggStopLoop()
+    tpEggCachedPos = tpEggGetNestsPosition(true)
+    if not tpEggCachedPos then return end
+
+    tpEggLog("Loop iniciado.", Color3.fromRGB(120, 220, 160))
+
+    tpEggLoopConn = RunService.Heartbeat:Connect(function()
+        if not tpEggEnabled then
+            tpEggStopLoop()
+            return
+        end
+        local char = LocalPlayer.Character
+        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and tpEggCachedPos then
+            hrp.CFrame = CFrame.new(tpEggCachedPos) * (hrp.CFrame - hrp.CFrame.Position)
+        end
+    end)
+end
+
+local function tpEggSetToggle(state)
+    tpEggEnabled = state
+    if state then
+        btnTpEggToggle.Text = "🌀 TP-EGG: ON"
+        btnTpEggToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
+        btnTpEggToggle.TextColor3 = Color3.fromRGB(180, 255, 200)
+        strokeTpEgg.Color = VERDE
+        tpEggStatus.Text = "TP-EGG: Ativo"
+        tpEggStatus.TextColor3 = VERDE
+        tpEggLog("Ativado.", Color3.fromRGB(120, 220, 160))
+        tpEggStartLoop()
+    else
+        btnTpEggToggle.Text = "🌀 TP-EGG: OFF"
+        btnTpEggToggle.BackgroundColor3 = BG_BTN
+        btnTpEggToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
+        strokeTpEgg.Color = ROXO_DARK
+        tpEggStatus.Text = "TP-EGG: Inativo"
+        tpEggStatus.TextColor3 = Color3.fromRGB(180, 220, 255)
+        tpEggStopLoop()
+        tpEggLog("Desativado.", Color3.fromRGB(220, 150, 90))
+    end
+end
+
+btnTpEggToggle.MouseButton1Click:Connect(function()
+    tpEggSetToggle(not tpEggEnabled)
+end)
+
+-- TELEPORTE + LOOP
+local function tpEggDoTeleport(withLoop)
+    tpEggCachedPos = tpEggGetNestsPosition(true)
+    if not tpEggCachedPos then return end
+
+    local char = LocalPlayer.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then
+        tpEggLog("Sem HRP.", Color3.fromRGB(240, 120, 120))
+        return
+    end
+
+    hrp.CFrame = CFrame.new(tpEggCachedPos) * (hrp.CFrame - hrp.CFrame.Position)
+    tpEggLog("TP feito.", Color3.fromRGB(120, 220, 160))
+
+    if withLoop then
+        tpEggStartLoop()
+    end
+end
+
+local function tpEggTryTeleport(prompt, triggeringPlayer)
+    tpEggLog("Prompt disparou: " .. (prompt and prompt.Name or "?"),
+        Color3.fromRGB(200, 200, 200))
+    if not tpEggEnabled then return end
+    if triggeringPlayer and triggeringPlayer ~= LocalPlayer then return end
+    if not tpEggIsSmartPrompt(prompt) then
+        tpEggLog("Nao e SmartPrompt. Ignorando.", Color3.fromRGB(220, 180, 90))
+        return
+    end
+    tpEggDoTeleport(true)
+end
+
+-- HOOK EM PROMPTS
+local tpEggWatched = setmetatable({}, {__mode = "k"})
+
+local function tpEggWatchPrompt(prompt)
+    if tpEggWatched[prompt] then return end
+    tpEggWatched[prompt] = true
+    prompt.Triggered:Connect(function(triggeringPlayer)
+        tpEggTryTeleport(prompt, triggeringPlayer)
+    end)
+end
+
+for _, d in ipairs(Workspace:GetDescendants()) do
+    if d:IsA("ProximityPrompt") then tpEggWatchPrompt(d) end
+end
+
+Workspace.DescendantAdded:Connect(function(d)
+    if d:IsA("ProximityPrompt") then tpEggWatchPrompt(d) end
+end)
+
+ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeringPlayer)
+    tpEggTryTeleport(prompt, triggeringPlayer)
+end)
+ProximityPromptService.PromptButtonHoldEnded:Connect(function(prompt, triggeringPlayer)
+    tpEggTryTeleport(prompt, triggeringPlayer)
+end)
+
+btnTpEggTest.MouseButton1Click:Connect(function()
+    tpEggLog("TP TESTE clicado.", Color3.fromRGB(180, 200, 255))
+    tpEggDoTeleport(true)
+end)
+
+-- MORTE / RESPAWN
+local tpEggLastDeathCFrame = nil
+
+local function tpEggHookCharacter(char)
+    local humanoid = char:WaitForChild("Humanoid", 10)
+    if not humanoid then return end
+    humanoid.Died:Connect(function()
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            tpEggLastDeathCFrame = hrp.CFrame
+            tpEggLog(string.format("Morreu em %.1f, %.1f, %.1f",
+                tpEggLastDeathCFrame.Position.X,
+                tpEggLastDeathCFrame.Position.Y,
+                tpEggLastDeathCFrame.Position.Z),
+                Color3.fromRGB(240, 150, 150))
+        end
+        tpEggStopLoop()
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    tpEggHookCharacter(char)
+    if not tpEggEnabled or not tpEggLastDeathCFrame then return end
+    local savedCF = tpEggLastDeathCFrame
+
+    task.spawn(function()
+        task.wait(2)
+        local hrp = char:WaitForChild("HumanoidRootPart", 5)
+        if not hrp then return end
+        if hrp.Parent then
+            hrp.CFrame = savedCF
+            tpEggLog("Respawn reposicionado (sem loop).", Color3.fromRGB(120, 220, 160))
+        end
+    end)
+end)
+
+if LocalPlayer.Character then
+    tpEggHookCharacter(LocalPlayer.Character)
+end
+
+tpEggLog("Pronto. Prompts monitorados.", Color3.fromRGB(120, 220, 160))
+
+-- ============================================
 -- SISTEMA DE ABAS
 -- ============================================
 local abaAtiva = 1
 local function atualizarAbas()
-    containerFunc.Visible  = (abaAtiva == 1)
-    containerTps.Visible   = (abaAtiva == 2)
-    containerSpeed.Visible = (abaAtiva == 3)
-    containerEye.Visible   = (abaAtiva == 4)
+    containerFunc.Visible   = (abaAtiva == 1)
+    containerTps.Visible    = (abaAtiva == 2)
+    containerSpeed.Visible  = (abaAtiva == 3)
+    containerEye.Visible    = (abaAtiva == 4)
+    containerTpEgg.Visible  = (abaAtiva == 5)
 
     local function setCor(btn, ativo)
         if ativo then
@@ -1384,10 +1734,11 @@ local function atualizarAbas()
             btn.TextColor3 = Color3.fromRGB(200, 180, 220)
         end
     end
-    setCor(btnTabFunc,  abaAtiva == 1)
-    setCor(btnTabTps,   abaAtiva == 2)
-    setCor(btnTabSpeed, abaAtiva == 3)
-    setCor(btnTabEye,   abaAtiva == 4)
+    setCor(btnTabFunc,   abaAtiva == 1)
+    setCor(btnTabTps,    abaAtiva == 2)
+    setCor(btnTabSpeed,  abaAtiva == 3)
+    setCor(btnTabEye,    abaAtiva == 4)
+    setCor(btnTabTpEgg,  abaAtiva == 5)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -1408,6 +1759,11 @@ end)
 
 btnTabEye.MouseButton1Click:Connect(function()
     abaAtiva = 4
+    atualizarAbas()
+end)
+
+btnTabTpEgg.MouseButton1Click:Connect(function()
+    abaAtiva = 5
     atualizarAbas()
 end)
 
@@ -1506,26 +1862,23 @@ end
 local btnAnti,  contAnti,  labelAnti,  setaAnti,  barraAnti,  bordaAnti,  bounceAnti  =
     criarBotaoCyber(30, "🥚 ANTI-BOSS", 1)
 
-local btnTpEgg, contTpEgg, labelTpEgg, setaTpEgg, barraTpEgg, bordaTpEgg, bounceTpEgg =
-    criarBotaoCyber(30, "🌀 TP-EGG", 2)
-
 local btnTrap,  contTrap,  labelTrap,  setaTrap,  barraTrap,  bordaTrap,  bounceTrap  =
-    criarBotaoCyber(30, "🚫 ANTI-TRAP", 3)
+    criarBotaoCyber(30, "🚫 ANTI-TRAP", 2)
 
 local btnKB,    contKB,    labelKB,    setaKB,    barraKB,    bordaKB,    bounceKB    =
-    criarBotaoCyber(30, "💫 ANTI-KNOCKBACK", 4)
+    criarBotaoCyber(30, "💫 ANTI-KNOCKBACK", 3)
 
 local btnBypass, contBypass, labelBypass, setaBypass, barraBypass, bordaBypass, bounceBypass =
-    criarBotaoCyber(30, "🔥 BYPASS", 5)
+    criarBotaoCyber(30, "🔥 BYPASS", 4)
 
 local btnESP,   contESP,   labelESP,   setaESP,   barraESP,   bordaESP,   bounceESP   =
-    criarBotaoCyber(30, "🥚 ESP OVOS", 6)
+    criarBotaoCyber(30, "🥚 ESP OVOS", 5)
 
 local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounceDst   =
-    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 7)
+    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 6)
 
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
-    criarBotaoCyber(30, "🎯 RESET SPAWN", 8)
+    criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
@@ -1574,7 +1927,7 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, containerTpEgg, faixaBase, rodape }
 local minimizado = false
 local tamanhoNormal = UDim2.new(0, 200, 0, 220)
 local tamanhoMin    = UDim2.new(0, 200, 0, 36)
@@ -1784,6 +2137,10 @@ task.spawn(function()
             ledRodape.BackgroundColor3    = VERDE
             labelStatus.TextColor3        = VERDE
             labelStatus.Text              = "STATUS: ESP ATIVO"
+        elseif tpEggEnabled then
+            ledRodape.BackgroundColor3    = AZUL
+            labelStatus.TextColor3        = AZUL
+            labelStatus.Text              = "STATUS: TP-EGG ON"
         elseif AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
             ledRodape.BackgroundColor3    = VERMELHO
             labelStatus.TextColor3        = VERMELHO
@@ -2101,403 +2458,5 @@ do
         labelBypass.Text             = "🔥 BYPASS  [ON]"
         Toast("Bypass aplicado", Color3.fromRGB(255, 70, 90))
         aplicarBypass(LocalPlayer.Character)
-    end)
-end
-
--- ==========================================
--- TP-EGG (painel flutuante — botão só abre/fecha)
--- ==========================================
-do
-    -- ScreenGui própria, escondida até clicar no botão 🌀 TP-EGG
-    local tpEggGui = Instance.new("ScreenGui")
-    tpEggGui.Name = "TweenTPPanel"
-    tpEggGui.ResetOnSpawn = false
-    tpEggGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    tpEggGui.IgnoreGuiInset = true
-    tpEggGui.Enabled = false
-    tpEggGui.Parent = PlayerGui
-
-    local player = Players.LocalPlayer
-    local RESPAWN_WAIT = 2
-
-    -- ======================= UI ================================
-    local panel = Instance.new("Frame")
-    panel.Size = UDim2.new(0, 280, 0, 118)
-    panel.Position = UDim2.new(0, 20, 0, 100)
-    panel.BackgroundColor3 = Color3.fromRGB(28, 30, 38)
-    panel.BorderSizePixel = 0
-    panel.Active = true
-    panel.Draggable = true
-    panel.Parent = tpEggGui
-    Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 10)
-
-    local stroke = Instance.new("UIStroke", panel)
-    stroke.Color = Color3.fromRGB(70, 75, 90)
-    stroke.Thickness = 1
-
-    local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, -20, 0, 20)
-    title.Position = UDim2.new(0, 12, 0, 4)
-    title.BackgroundTransparency = 1
-    title.Text = "TP  •  Nests (loop)"
-    title.TextColor3 = Color3.fromRGB(230, 230, 240)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 13
-    title.TextXAlignment = Enum.TextXAlignment.Left
-    title.Parent = panel
-
-    local toggleBg = Instance.new("Frame")
-    toggleBg.Size = UDim2.new(0, 50, 0, 26)
-    toggleBg.Position = UDim2.new(0, 15, 0, 30)
-    toggleBg.BackgroundColor3 = Color3.fromRGB(60, 62, 72)
-    toggleBg.BorderSizePixel = 0
-    toggleBg.Active = true
-    toggleBg.Parent = panel
-    Instance.new("UICorner", toggleBg).CornerRadius = UDim.new(1, 0)
-
-    local knob = Instance.new("Frame")
-    knob.Size = UDim2.new(0, 22, 0, 22)
-    knob.Position = UDim2.new(0, 2, 0, 2)
-    knob.BackgroundColor3 = Color3.fromRGB(235, 235, 235)
-    knob.BorderSizePixel = 0
-    knob.Parent = toggleBg
-    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
-
-    local statusLabel = Instance.new("TextLabel")
-    statusLabel.Size = UDim2.new(0, 100, 0, 20)
-    statusLabel.Position = UDim2.new(0, 80, 0, 33)
-    statusLabel.BackgroundTransparency = 1
-    statusLabel.Text = "OFF"
-    statusLabel.TextColor3 = Color3.fromRGB(220, 90, 90)
-    statusLabel.Font = Enum.Font.GothamBold
-    statusLabel.TextSize = 14
-    statusLabel.TextXAlignment = Enum.TextXAlignment.Left
-    statusLabel.Parent = panel
-
-    local testBtn = Instance.new("TextButton")
-    testBtn.Size = UDim2.new(0, 90, 0, 26)
-    testBtn.Position = UDim2.new(1, -100, 0, 30)
-    testBtn.BackgroundColor3 = Color3.fromRGB(60, 90, 160)
-    testBtn.BorderSizePixel = 0
-    testBtn.Text = "TP TESTE"
-    testBtn.TextColor3 = Color3.fromRGB(240, 240, 255)
-    testBtn.Font = Enum.Font.GothamBold
-    testBtn.TextSize = 12
-    testBtn.Parent = panel
-    Instance.new("UICorner", testBtn).CornerRadius = UDim.new(0, 6)
-
-    local footerHolder = Instance.new("Frame")
-    footerHolder.Size = UDim2.new(1, -20, 0, 52)
-    footerHolder.Position = UDim2.new(0, 10, 0, 62)
-    footerHolder.BackgroundColor3 = Color3.fromRGB(18, 20, 26)
-    footerHolder.BorderSizePixel = 0
-    footerHolder.Parent = panel
-    Instance.new("UICorner", footerHolder).CornerRadius = UDim.new(0, 6)
-
-    local footerScroll = Instance.new("ScrollingFrame")
-    footerScroll.Size = UDim2.new(1, -8, 1, -8)
-    footerScroll.Position = UDim2.new(0, 4, 0, 4)
-    footerScroll.BackgroundTransparency = 1
-    footerScroll.BorderSizePixel = 0
-    footerScroll.ScrollBarThickness = 3
-    footerScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
-    footerScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    footerScroll.ScrollBarImageColor3 = Color3.fromRGB(90, 95, 110)
-    footerScroll.Parent = footerHolder
-
-    local footerList = Instance.new("UIListLayout")
-    footerList.Padding = UDim.new(0, 1)
-    footerList.SortOrder = Enum.SortOrder.LayoutOrder
-    footerList.Parent = footerScroll
-
-    local MAX_LINES = 30
-    local lineCount = 0
-
-    local function log(msg, color)
-        lineCount += 1
-        local lbl = Instance.new("TextLabel")
-        lbl.Size = UDim2.new(1, 0, 0, 12)
-        lbl.BackgroundTransparency = 1
-        lbl.Text = "• " .. tostring(msg)
-        lbl.TextColor3 = color or Color3.fromRGB(180, 200, 220)
-        lbl.Font = Enum.Font.Code
-        lbl.TextSize = 10
-        lbl.TextXAlignment = Enum.TextXAlignment.Left
-        lbl.LayoutOrder = lineCount
-        lbl.Parent = footerScroll
-        footerScroll.CanvasPosition = Vector2.new(0, math.huge)
-        local labels = {}
-        for _, c in ipairs(footerScroll:GetChildren()) do
-            if c:IsA("TextLabel") then table.insert(labels, c) end
-        end
-        if #labels > MAX_LINES then
-            table.sort(labels, function(a, b) return a.LayoutOrder < b.LayoutOrder end)
-            labels[1]:Destroy()
-        end
-    end
-
-    log("Script carregado.", Color3.fromRGB(120, 220, 160))
-
-    local enabled = false
-
-    -- =========== BUSCA GuardAreas > Forest > Nests =============
-    local function findNests()
-        local guardAreas
-        for _, d in ipairs(Workspace:GetDescendants()) do
-            if d.Name == "GuardAreas" then guardAreas = d; break end
-        end
-        if not guardAreas then
-            log("GuardAreas NAO encontrado.", Color3.fromRGB(240, 120, 120))
-            return nil
-        end
-        local forest
-        for _, d in ipairs(guardAreas:GetDescendants()) do
-            if d.Name == "Forest" then forest = d; break end
-        end
-        if not forest then
-            log("Forest NAO encontrado.", Color3.fromRGB(240, 120, 120))
-            return nil
-        end
-        local nests = forest:FindFirstChild("Nests")
-        if not nests then
-            for _, d in ipairs(forest:GetDescendants()) do
-                if d.Name == "Nests" then nests = d; break end
-            end
-        end
-        if not nests then
-            log("Nests NAO encontrado.", Color3.fromRGB(240, 120, 120))
-            return nil
-        end
-        return nests
-    end
-
-    local function getNestsPosition(doLog)
-        local nests = findNests()
-        if not nests then return nil end
-        local pos
-        if nests:IsA("Model") then
-            local ok, cf, size = pcall(function() return nests:GetBoundingBox() end)
-            if ok and cf and size then
-                local topY = cf.Position.Y + (size.Y / 2) + 4
-                pos = Vector3.new(cf.Position.X, topY, cf.Position.Z)
-            else
-                local pp = nests.PrimaryPart or nests:FindFirstChildWhichIsA("BasePart", true)
-                if pp then pos = pp.Position + Vector3.new(0, pp.Size.Y/2 + 4, 0) end
-            end
-        elseif nests:IsA("BasePart") then
-            pos = nests.Position + Vector3.new(0, nests.Size.Y/2 + 4, 0)
-        end
-        if not pos then
-            if doLog then log("Nests sem posicao.", Color3.fromRGB(240, 120, 120)) end
-            return nil
-        end
-        if doLog then
-            log(string.format("Destino: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z),
-                Color3.fromRGB(255, 220, 120))
-        end
-        return pos
-    end
-
-    -- =================== DETECTA O PROMPT ======================
-    local function isSmartPrompt(prompt)
-        if not prompt or not prompt.Parent then return false end
-        if prompt.Name == "CarryAreaEgg" then return true end
-        if prompt.Parent.Name == "SmartPromptPart" then return true end
-        local p, depth = prompt.Parent, 0
-        while p and p ~= Workspace and depth < 15 do
-            if p.Name == "SmartPromptPart" then return true end
-            p = p.Parent
-            depth += 1
-        end
-        return false
-    end
-
-    -- ============ LOOP CONTÍNUO (sem delay) ====================
-    local loopConn  = nil
-    local cachedPos = nil
-
-    local function stopLoop()
-        if loopConn then
-            loopConn:Disconnect()
-            loopConn = nil
-            log("Loop parado.", Color3.fromRGB(220, 180, 90))
-        end
-    end
-
-    local function startLoop()
-        stopLoop()
-        cachedPos = getNestsPosition(true)
-        if not cachedPos then return end
-
-        log("Loop iniciado.", Color3.fromRGB(120, 220, 160))
-
-        loopConn = RunService.Heartbeat:Connect(function()
-            if not enabled then
-                stopLoop()
-                return
-            end
-            local char = player.Character
-            local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp and cachedPos then
-                hrp.CFrame = CFrame.new(cachedPos) * (hrp.CFrame - hrp.CFrame.Position)
-            end
-        end)
-    end
-
-    -- ============ TOGGLE =======================================
-    local function setToggle(state)
-        enabled = state
-        if state then
-            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(50, 175, 100)}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(1, -24, 0, 2)}):Play()
-            statusLabel.Text = "ON"
-            statusLabel.TextColor3 = Color3.fromRGB(90, 220, 130)
-            log("Ativado.", Color3.fromRGB(120, 220, 160))
-        else
-            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(60, 62, 72)}):Play()
-            TweenService:Create(knob, TweenInfo.new(0.2), {Position = UDim2.new(0, 2, 0, 2)}):Play()
-            statusLabel.Text = "OFF"
-            statusLabel.TextColor3 = Color3.fromRGB(220, 90, 90)
-            stopLoop()
-            log("Desativado.", Color3.fromRGB(220, 150, 90))
-        end
-    end
-
-    toggleBg.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            setToggle(not enabled)
-        end
-    end)
-
-    -- ================== TELEPORTE + LOOP =======================
-    local function doTeleport(withLoop)
-        cachedPos = getNestsPosition(true)
-        if not cachedPos then return end
-
-        local char = player.Character
-        local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-        if not hrp then
-            log("Sem HRP.", Color3.fromRGB(240, 120, 120))
-            return
-        end
-
-        hrp.CFrame = CFrame.new(cachedPos) * (hrp.CFrame - hrp.CFrame.Position)
-        log("TP feito.", Color3.fromRGB(120, 220, 160))
-
-        if withLoop then
-            startLoop()
-        end
-    end
-
-    local function tryTeleport(prompt, triggeringPlayer)
-        log("Prompt disparou: " .. (prompt and prompt.Name or "?"),
-            Color3.fromRGB(200, 200, 200))
-        if not enabled then return end
-        if triggeringPlayer and triggeringPlayer ~= player then return end
-        if not isSmartPrompt(prompt) then
-            log("Nao e SmartPrompt. Ignorando.", Color3.fromRGB(220, 180, 90))
-            return
-        end
-        doTeleport(true)
-    end
-
-    -- ============ HOOK EM CADA PROXIMITYPROMPT =================
-    local watched = setmetatable({}, {__mode = "k"})
-
-    local function watchPrompt(prompt)
-        if watched[prompt] then return end
-        watched[prompt] = true
-        prompt.Triggered:Connect(function(triggeringPlayer)
-            tryTeleport(prompt, triggeringPlayer)
-        end)
-    end
-
-    for _, d in ipairs(Workspace:GetDescendants()) do
-        if d:IsA("ProximityPrompt") then watchPrompt(d) end
-    end
-
-    Workspace.DescendantAdded:Connect(function(d)
-        if d:IsA("ProximityPrompt") then watchPrompt(d) end
-    end)
-
-    ProximityPromptService.PromptTriggered:Connect(function(prompt, triggeringPlayer)
-        tryTeleport(prompt, triggeringPlayer)
-    end)
-    ProximityPromptService.PromptButtonHoldEnded:Connect(function(prompt, triggeringPlayer)
-        tryTeleport(prompt, triggeringPlayer)
-    end)
-
-    testBtn.MouseButton1Click:Connect(function()
-        log("TP TESTE clicado.", Color3.fromRGB(180, 200, 255))
-        doTeleport(true)
-    end)
-
-    -- ================ MORTE / RESPAWN ==========================
-    local lastDeathCFrame = nil
-
-    local function hookCharacter(char)
-        local humanoid = char:WaitForChild("Humanoid", 10)
-        if not humanoid then return end
-        humanoid.Died:Connect(function()
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                lastDeathCFrame = hrp.CFrame
-                log(string.format("Morreu em %.1f, %.1f, %.1f",
-                    lastDeathCFrame.Position.X,
-                    lastDeathCFrame.Position.Y,
-                    lastDeathCFrame.Position.Z),
-                    Color3.fromRGB(240, 150, 150))
-            end
-            stopLoop()
-        end)
-    end
-
-    player.CharacterAdded:Connect(function(char)
-        hookCharacter(char)
-        if not enabled or not lastDeathCFrame then return end
-        local savedCF = lastDeathCFrame
-
-        task.spawn(function()
-            task.wait(RESPAWN_WAIT)
-            local hrp = char:WaitForChild("HumanoidRootPart", 5)
-            if not hrp then return end
-            if hrp.Parent then
-                hrp.CFrame = savedCF
-                log("Respawn reposicionado (sem loop).", Color3.fromRGB(120, 220, 160))
-            end
-        end)
-    end)
-
-    if player.Character then
-        hookCharacter(player.Character)
-    end
-
-    log("Pronto. Prompts monitorados.", Color3.fromRGB(120, 220, 160))
-
-    -- ========================================================
-    -- Callback do botão 🌀 TP-EGG do PL Hub — só abre/fecha o painel
-    -- ========================================================
-    btnTpEgg.MouseButton1Click:Connect(function()
-        bounceTpEgg()
-        tpEggGui.Enabled = not tpEggGui.Enabled
-
-        if tpEggGui.Enabled then
-            contTpEgg.BackgroundColor3     = Color3.fromRGB(20, 55, 60)
-            barraTpEgg.BackgroundColor3    = AZUL
-            bordaTpEgg.Color               = AZUL
-            labelTpEgg.TextColor3          = Color3.fromRGB(180, 230, 255)
-            setaTpEgg.TextColor3           = AZUL
-            labelTpEgg.Text                = "🌀 TP-EGG  [ON]"
-            Toast("TP-EGG painel aberto", AZUL)
-        else
-            contTpEgg.BackgroundColor3     = BG_BTN
-            barraTpEgg.BackgroundColor3    = ROXO
-            bordaTpEgg.Color               = ROXO_DARK
-            labelTpEgg.TextColor3          = Color3.fromRGB(230, 220, 255)
-            setaTpEgg.TextColor3           = ROXO
-            labelTpEgg.Text                = "🌀 TP-EGG"
-            Toast("TP-EGG painel fechado", AMARELO)
-        end
     end)
 end
