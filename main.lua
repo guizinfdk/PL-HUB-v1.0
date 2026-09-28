@@ -2187,7 +2187,7 @@ task.spawn(function()
             bordaFlutuante.Color             = ROXO_DARK
             labelFlutuante.TextColor3        = Color3.fromRGB(230, 220, 255)
             setaFlutuante.TextColor3         = ROXO
-            labelFlutuante.Text              = "🪟 PAINEL FLUTUANTE"
+            labelFlutuante.Text              = "🌌 TP-EGG"
         end
 
         if espOvosAtivo then
