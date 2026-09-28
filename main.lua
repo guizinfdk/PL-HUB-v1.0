@@ -2180,7 +2180,7 @@ task.spawn(function()
             bordaFlutuante.Color             = VERDE
             labelFlutuante.TextColor3        = Color3.fromRGB(180, 255, 200)
             setaFlutuante.TextColor3         = VERDE
-            labelFlutuante.Text              = "🪟 PAINEL FLUTUANTE  [ON]"
+            labelFlutuante.Text              = "🌌 TP-EGG  [ON]"
         else
             contFlutuante.BackgroundColor3   = BG_BTN
             barraFlutuante.BackgroundColor3  = ROXO
