@@ -25,7 +25,7 @@ local THRESHOLD_KB = 15
 
 local Destino = { posicao = nil, usarSpawn = true }
 
--- MÓDULOS ESP
+-- MÓDULOS
 local EggState, AreasData, RarityData, AssetsData, PetsData
 pcall(function() EggState   = require(ReplicatedStorage.Client.EggState) end)
 pcall(function() AreasData  = require(ReplicatedStorage.Data.Areas) end)
@@ -349,7 +349,7 @@ task.spawn(function()
     end
 end)
 
--- TP-AREA (lógica)
+-- TP-AREA
 local function FindGuardAreas(parent)
     parent = parent or Workspace
     for _, child in pairs(parent:GetChildren()) do
@@ -368,33 +368,25 @@ local function GetNestsModel(areaName)
         warn("[TP-AREA] Pasta GuardAreas não encontrada!")
         return nil
     end
-
     local areaFolder = guardAreas:FindFirstChild(areaName)
     if not areaFolder then
         warn("[TP-AREA] Área não encontrada: " .. areaName)
         return nil
     end
-
     local nests = areaFolder:FindFirstChild("Nests")
     if not nests then
         for _, v in pairs(areaFolder:GetDescendants()) do
-            if v.Name == "Nests" then
-                nests = v
-                break
-            end
+            if v.Name == "Nests" then nests = v break end
         end
     end
-
     return nests
 end
 
 local function TeleportAndFireClosestPrompt(nestsModel)
     if not nestsModel then return false end
-
     local char = LocalPlayer.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return false end
     local hrp = char.HumanoidRootPart
-
     local targetPart = nestsModel.PrimaryPart or nestsModel:FindFirstChildWhichIsA("BasePart")
     if targetPart then
         hrp.CFrame = targetPart.CFrame + Vector3.new(0, 5, 0)
@@ -403,11 +395,9 @@ local function TeleportAndFireClosestPrompt(nestsModel)
         hrp.CFrame = cf + Vector3.new(0, size.Y/2 + 3, 0)
     end
     task.wait(0.5)
-
     local closestPrompt = nil
     local shortestDist = math.huge
     local MAX_DISTANCE = 200
-
     for _, desc in pairs(Workspace:GetDescendants()) do
         if desc:IsA("ProximityPrompt") and desc.Parent:IsA("BasePart") then
             local dist = (hrp.Position - desc.Parent.Position).Magnitude
@@ -417,11 +407,9 @@ local function TeleportAndFireClosestPrompt(nestsModel)
             end
         end
     end
-
     if closestPrompt then
         hrp.CFrame = closestPrompt.Parent.CFrame + Vector3.new(0, 3, 0)
         task.wait(0.3)
-
         if fireproximityprompt then
             fireproximityprompt(closestPrompt)
         else
@@ -445,9 +433,7 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
         if setStatus then setStatus("Selecione uma área primeiro!", Color3.fromRGB(255, 200, 0)) end
         return
     end
-
     if setBtn then setBtn("Teleportando...", Color3.fromRGB(200, 150, 0)) end
-
     if setStatus then setStatus("Indo para Forest...", Color3.fromRGB(255, 200, 0)) end
     local forestNests = GetNestsModel("Forest")
     if forestNests then
@@ -455,16 +441,13 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
     else
         warn("[TP-AREA] Área 'Forest' não encontrada no GuardAreas.")
     end
-
     if setStatus then setStatus("Aguardando 3 segundos...", Color3.fromRGB(255, 200, 0)) end
     task.wait(3)
-
     if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         if setStatus then setStatus("Personagem morreu ou resetou.", Color3.fromRGB(255, 100, 100)) end
         if setBtn then setBtn("🌪️TP-AREA", Color3.fromRGB(0, 150, 255)) end
         return
     end
-
     if setStatus then setStatus("Indo para " .. areaNome .. "...", Color3.fromRGB(100, 255, 100)) end
     local targetNests = GetNestsModel(areaNome)
     if targetNests then
@@ -473,9 +456,7 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
         warn("[TP-AREA] Model 'Nests' não encontrado para a área: " .. areaNome)
         if setStatus then setStatus("Erro: Nests não encontrado em " .. areaNome, Color3.fromRGB(255, 100, 100)) end
     end
-
     if setBtn then setBtn("🌪️TP-AREA", Color3.fromRGB(0, 150, 255)) end
-
     task.wait(2)
     if setStatus then setStatus("Selecione uma área...", Color3.fromRGB(200, 200, 220)) end
 end
@@ -1056,38 +1037,19 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- ESP STATE + STORAGE
+-- ABA 👁️ — LISTA DE OVOS
 -- ============================================
-local espOvosAtivo     = false
-local maxEspDistance   = 500
+local maxEspDistance   = 1000
 local targetRarityName = "Todos"
-
-local espFolder = Instance.new("Folder")
-espFolder.Name   = "ESP_STORAGE"
-espFolder.Parent = Workspace
-
-local activeEggESP = {}
-
-local function limparObjetoESP(tbl, id)
-    if tbl[id] then
-        pcall(function() if tbl[id].gui then tbl[id].gui:Destroy() end end)
-        tbl[id] = nil
-    end
-end
-
-local function limparTudoESP(tbl)
-    for id in pairs(tbl) do limparObjetoESP(tbl, id) end
-end
+local eggItems         = {}
 
 local function GetEggRarityInfo(egg)
     if not egg then return "Common", 100 end
-
     if egg.Rarity then
         local r = egg.Rarity
         local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
         return name, RARITY_SCORE_MAP[name] or 100
     end
-
     local cat = egg.AssetCategory or egg.Category or egg.Name
     if cat and AssetsData then
         local aInfo = (AssetsData.Directory or AssetsData)[cat]
@@ -1097,7 +1059,6 @@ local function GetEggRarityInfo(egg)
             return name, RARITY_SCORE_MAP[name] or 100
         end
     end
-
     local areaData = AreasData and (AreasData.Directory or AreasData) and (AreasData.Directory or AreasData)[egg.AreaId]
     local rarity = areaData and areaData.Rarity
     local rarityId = (type(rarity) == "table" and (rarity._id or rarity.DisplayName or rarity.Name))
@@ -1105,19 +1066,16 @@ local function GetEggRarityInfo(egg)
     local rInfo = (RarityData and (RarityData.Rarities or RarityData) or {})[rarityId] or {}
     local rarityDisplayName = (type(rInfo) == "table" and (rInfo.DisplayName or rInfo._id))
         or (type(rarity) == "table" and rarity.DisplayName) or rarityId or "Common"
-
     return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
 end
 
 local function GetPetIcon(record)
     if not record then return nil end
-
     local rawIcon = record.Icon or record.PetIcon or record.ImageAsset or record.TextureId
     if rawIcon then
         return (type(rawIcon) == "number" or not string.match(tostring(rawIcon), "://"))
             and ("rbxassetid://" .. tostring(rawIcon)) or tostring(rawIcon)
     end
-
     local targetName = record.Pet or record.PetId or record.PetName
         or record.AssetCategory or record.Category
     if targetName then
@@ -1141,47 +1099,201 @@ local function GetPetIcon(record)
     return nil
 end
 
--- ============================================
--- ABA 👁️ — VISUALIZADOR DETALHADO
--- ============================================
-local eyeHeaderLbl = Instance.new("TextLabel")
-eyeHeaderLbl.Size = UDim2.new(1, -16, 0, 14)
-eyeHeaderLbl.Position = UDim2.new(0, 8, 0, 0)
-eyeHeaderLbl.BackgroundTransparency = 1
-eyeHeaderLbl.Font = Enum.Font.GothamBold
-eyeHeaderLbl.TextSize = 10
-eyeHeaderLbl.TextColor3 = Color3.fromRGB(180, 220, 255)
-eyeHeaderLbl.TextXAlignment = Enum.TextXAlignment.Left
-eyeHeaderLbl.Text = "ESP: OFF | Filtro: Todos | 0 ovos"
-eyeHeaderLbl.ZIndex = 4
-eyeHeaderLbl.Parent = containerEye
-
-local btnEyeToggle = Instance.new("TextButton")
-btnEyeToggle.Size = UDim2.new(1, -16, 0, 26)
-btnEyeToggle.Position = UDim2.new(0, 8, 0, 18)
-btnEyeToggle.BackgroundColor3 = BG_BTN
-btnEyeToggle.BorderSizePixel = 0
-btnEyeToggle.Font = Enum.Font.GothamBold
-btnEyeToggle.TextSize = 11
-btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
-btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
-btnEyeToggle.ZIndex = 4
-btnEyeToggle.Parent = containerEye
-Instance.new("UICorner", btnEyeToggle).CornerRadius = UDim.new(0, 6)
-
+-- Botão de filtro
 local btnEyeFiltro = Instance.new("TextButton")
-btnEyeFiltro.Size = UDim2.new(1, -16, 0, 26)
-btnEyeFiltro.Position = UDim2.new(0, 8, 0, 48)
+btnEyeFiltro.Size = UDim2.new(1, -16, 0, 22)
+btnEyeFiltro.Position = UDim2.new(0, 8, 0, 2)
 btnEyeFiltro.BackgroundColor3 = BG_BTN
 btnEyeFiltro.BorderSizePixel = 0
 btnEyeFiltro.Font = Enum.Font.GothamBold
-btnEyeFiltro.TextSize = 11
+btnEyeFiltro.TextSize = 10
 btnEyeFiltro.TextColor3 = Color3.fromRGB(230, 220, 255)
 btnEyeFiltro.Text = "Filtro: Todos"
 btnEyeFiltro.ZIndex = 4
 btnEyeFiltro.Parent = containerEye
-Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 6)
+Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 5)
 
+-- Input distância
+local distInput = Instance.new("TextBox")
+distInput.Size = UDim2.new(1, -16, 0, 22)
+distInput.Position = UDim2.new(0, 8, 0, 28)
+distInput.BackgroundColor3 = BG_BTN
+distInput.BorderSizePixel = 0
+distInput.Font = Enum.Font.GothamBold
+distInput.TextSize = 10
+distInput.TextColor3 = Color3.fromRGB(230, 220, 255)
+distInput.Text = tostring(maxEspDistance)
+distInput.PlaceholderText = "Distância máxima"
+distInput.ZIndex = 4
+distInput.Parent = containerEye
+Instance.new("UICorner", distInput).CornerRadius = UDim.new(0, 5)
+
+-- Lista (scroll)
+local lista = Instance.new("ScrollingFrame")
+lista.Name = "ListaOvos"
+lista.Size = UDim2.new(1, 0, 1, -60)
+lista.Position = UDim2.new(0, 0, 0, 56)
+lista.BackgroundTransparency = 1
+lista.BorderSizePixel = 0
+lista.ScrollBarThickness = 4
+lista.ScrollBarImageColor3 = ROXO
+lista.ScrollBarImageTransparency = 0.3
+lista.CanvasSize = UDim2.new(0, 0, 0, 0)
+lista.AutomaticCanvasSize = Enum.AutomaticSize.Y
+lista.ScrollingDirection = Enum.ScrollingDirection.Y
+lista.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+lista.ZIndex = 3
+lista.Parent = containerEye
+
+local listaLayout = Instance.new("UIListLayout")
+listaLayout.Padding = UDim.new(0, 4)
+listaLayout.SortOrder = Enum.SortOrder.LayoutOrder
+listaLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+listaLayout.Parent = lista
+
+local listaPad = Instance.new("UIPadding")
+listaPad.PaddingTop = UDim.new(0, 2)
+listaPad.PaddingBottom = UDim.new(0, 4)
+listaPad.Parent = lista
+
+-- Funções da lista
+local function limparListaOvos()
+    for uid, item in pairs(eggItems) do
+        if item.frame then item.frame:Destroy() end
+        eggItems[uid] = nil
+    end
+    lista.CanvasSize = UDim2.new(0, 0, 0, 0)
+end
+
+local function criarItemOvo()
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -8, 0, 36)
+    frame.BackgroundColor3 = BG_BTN
+    frame.BorderSizePixel = 0
+    frame.ZIndex = 3
+    frame.Parent = lista
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 5)
+
+    local icon = Instance.new("ImageLabel")
+    icon.Size = UDim2.new(0, 28, 0, 28)
+    icon.Position = UDim2.new(0, 4, 0.5, -14)
+    icon.BackgroundTransparency = 1
+    icon.ScaleType = Enum.ScaleType.Fit
+    icon.Image = ""
+    icon.ZIndex = 4
+    icon.Parent = frame
+
+    local labelNome = Instance.new("TextLabel")
+    labelNome.Size = UDim2.new(1, -80, 0, 14)
+    labelNome.Position = UDim2.new(0, 36, 0, 3)
+    labelNome.BackgroundTransparency = 1
+    labelNome.TextColor3 = Color3.fromRGB(240, 240, 245)
+    labelNome.Font = Enum.Font.GothamBold
+    labelNome.TextSize = 10
+    labelNome.TextXAlignment = Enum.TextXAlignment.Left
+    labelNome.TextTruncate = Enum.TextTruncate.AtEnd
+    labelNome.ZIndex = 4
+    labelNome.Parent = frame
+
+    local labelRarity = Instance.new("TextLabel")
+    labelRarity.Size = UDim2.new(1, -80, 0, 12)
+    labelRarity.Position = UDim2.new(0, 36, 0, 18)
+    labelRarity.BackgroundTransparency = 1
+    labelRarity.TextColor3 = Color3.fromRGB(80, 240, 110)
+    labelRarity.Font = Enum.Font.Gotham
+    labelRarity.TextSize = 9
+    labelRarity.TextXAlignment = Enum.TextXAlignment.Left
+    labelRarity.TextTruncate = Enum.TextTruncate.AtEnd
+    labelRarity.ZIndex = 4
+    labelRarity.Parent = frame
+
+    local labelDist = Instance.new("TextLabel")
+    labelDist.Size = UDim2.new(0, 40, 1, 0)
+    labelDist.Position = UDim2.new(1, -42, 0, 0)
+    labelDist.BackgroundTransparency = 1
+    labelDist.TextColor3 = Color3.fromRGB(150, 150, 160)
+    labelDist.Font = Enum.Font.Gotham
+    labelDist.TextSize = 9
+    labelDist.TextXAlignment = Enum.TextXAlignment.Right
+    labelDist.ZIndex = 4
+    labelDist.Parent = frame
+
+    return { frame = frame, icon = icon, labelNome = labelNome, labelRarity = labelRarity, labelDist = labelDist }
+end
+
+local function atualizarListaOvos()
+    local char = LocalPlayer.Character
+    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
+    local myPos = hrp and hrp.Position or Vector3.zero
+
+    if not EggState or not EggState.ReadFieldEggs then return end
+    local ok, snapshot = pcall(EggState.ReadFieldEggs)
+    if not ok or not snapshot or not snapshot.Records then return end
+
+    local ovosValidos = {}
+    local currentUids = {}
+
+    for _, record in ipairs(snapshot.Records) do
+        if record.State == "Slot" and record.BoundsCFrame then
+            local eggPos = record.BoundsCFrame.Position
+            local dist = math.floor((eggPos - myPos).Magnitude)
+            if dist <= maxEspDistance then
+                local rarityName = GetEggRarityInfo(record)
+                if targetRarityName == "Todos" or rarityName:lower() == targetRarityName:lower() then
+                    local uid = record.Uid or tostring(record.BoundsCFrame)
+                    currentUids[uid] = true
+                    table.insert(ovosValidos, {
+                        uid = uid,
+                        record = record,
+                        rarityName = rarityName,
+                        dist = dist,
+                        score = RARITY_SCORE_MAP[rarityName] or 100,
+                    })
+                end
+            end
+        end
+    end
+
+    table.sort(ovosValidos, function(a, b) return a.score > b.score end)
+
+    for uid, item in pairs(eggItems) do
+        if not currentUids[uid] then
+            item.frame:Destroy()
+            eggItems[uid] = nil
+        end
+    end
+
+    for i, ovo in ipairs(ovosValidos) do
+        local uid = ovo.uid
+        if not eggItems[uid] or not eggItems[uid].frame.Parent then
+            eggItems[uid] = criarItemOvo()
+        end
+        local item = eggItems[uid]
+        item.frame.LayoutOrder = i
+
+        local nome = ovo.record.AssetCategory or ovo.record.Category or ovo.record.Name or "Ovo"
+        item.labelNome.Text = tostring(nome)
+        item.labelRarity.Text = ovo.rarityName
+        item.labelDist.Text = ovo.dist .. "m"
+
+        local rarCor = RARITY_COLOR[ovo.rarityName] or VERDE
+        item.labelRarity.TextColor3 = rarCor
+
+        local iconAsset = GetPetIcon(ovo.record)
+        if iconAsset then
+            if item.icon.Image ~= iconAsset then
+                item.icon.Image = iconAsset
+            end
+            item.icon.Visible = true
+        else
+            item.icon.Visible = false
+        end
+    end
+
+    lista.CanvasSize = UDim2.new(0, 0, 0, #ovosValidos * 40)
+end
+
+-- Filtro
 local niveisFiltroEye = {
     "Todos","Common","Uncommon","Rare","Epic","Legendary",
     "Mythic","Cosmic","Secret","Eternal","Divine"
@@ -1193,182 +1305,28 @@ btnEyeFiltro.MouseButton1Click:Connect(function()
     if idxFiltroEye > #niveisFiltroEye then idxFiltroEye = 1 end
     targetRarityName = niveisFiltroEye[idxFiltroEye]
     btnEyeFiltro.Text = "Filtro: " .. targetRarityName
+    limparListaOvos()
+    task.spawn(function() pcall(atualizarListaOvos) end)
 end)
 
-local scrollEye = Instance.new("ScrollingFrame")
-scrollEye.Name = "ScrollEye"
-scrollEye.Size = UDim2.new(1, 0, 1, -84)
-scrollEye.Position = UDim2.new(0, 0, 0, 78)
-scrollEye.BackgroundTransparency = 1
-scrollEye.BorderSizePixel = 0
-scrollEye.ScrollBarThickness = 4
-scrollEye.ScrollBarImageColor3 = ROXO
-scrollEye.ScrollBarImageTransparency = 0.3
-scrollEye.CanvasSize = UDim2.new(0, 0, 0, 0)
-scrollEye.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scrollEye.ScrollingDirection = Enum.ScrollingDirection.Y
-scrollEye.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
-scrollEye.ZIndex = 3
-scrollEye.Parent = containerEye
-
-local eyeLayout = Instance.new("UIListLayout")
-eyeLayout.Padding = UDim.new(0, 5)
-eyeLayout.SortOrder = Enum.SortOrder.LayoutOrder
-eyeLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-eyeLayout.Parent = scrollEye
-
-local eyePad = Instance.new("UIPadding")
-eyePad.PaddingTop = UDim.new(0, 2)
-eyePad.PaddingBottom = UDim.new(0, 4)
-eyePad.Parent = scrollEye
-
-local function limparListaEye()
-    for _, c in ipairs(scrollEye:GetChildren()) do
-        if c:IsA("GuiObject") then c:Destroy() end
+distInput.FocusLost:Connect(function()
+    local valor = tonumber(distInput.Text)
+    if valor and valor > 0 then
+        maxEspDistance = valor
+    else
+        distInput.Text = tostring(maxEspDistance)
     end
-end
+    limparListaOvos()
+    task.spawn(function() pcall(atualizarListaOvos) end)
+end)
 
--- 👇 NOVO: hash para evitar flicker na lista
-local ultimoHashEye = ""
-local function calcularHashEye(records)
-    local partes = {}
-    for _, r in ipairs(records) do
-        table.insert(partes,
-            (r.name or "?") .. "|" ..
-            (r.rarity or "?") .. "|" ..
-            tostring(r.dist or 0))
+-- Loop de atualização da lista
+task.spawn(function()
+    while gui.Parent do
+        task.wait(0.1)
+        pcall(atualizarListaOvos)
     end
-    return table.concat(partes, "§")
-end
-
-local function atualizarListaEye(records)
-    table.sort(records, function(a, b) return a.dist < b.dist end)
-
-    eyeHeaderLbl.Text = string.format("ESP: %s | Filtro: %s | %d ovos",
-        espOvosAtivo and "ON" or "OFF", targetRarityName, #records)
-
-    -- 👇 Só recria se algo mudou (evita flicker)
-    local hash = calcularHashEye(records)
-    if hash == ultimoHashEye then return end
-    ultimoHashEye = hash
-
-    limparListaEye()
-    if #records == 0 then
-        local empty = Instance.new("TextLabel")
-        empty.Size              = UDim2.new(1, -8, 0, 40)
-        empty.BackgroundTransparency = 1
-        empty.Text              = "Nenhum ovo detectado."
-        empty.TextColor3        = Color3.fromRGB(150, 150, 160)
-        empty.Font              = Enum.Font.Gotham
-        empty.TextSize          = 10
-        empty.TextWrapped       = true
-        empty.LayoutOrder       = 1
-        empty.Parent            = scrollEye
-        return
-    end
-
-    for i, rec in ipairs(records) do
-        if i > 40 then break end
-
-        local rarCor = RARITY_COLOR[rec.rarity] or ROXO
-
-        local card = Instance.new("Frame")
-        card.Size             = UDim2.new(1, -8, 0, 64)
-        card.BackgroundColor3 = BG_BTN
-        card.BorderSizePixel  = 0
-        card.LayoutOrder      = i
-        card.Parent           = scrollEye
-
-        Instance.new("UICorner", card).CornerRadius = UDim.new(0, 6)
-
-        local stroke = Instance.new("UIStroke")
-        stroke.Color        = rarCor
-        stroke.Thickness    = 1
-        stroke.Transparency = 0.4
-        stroke.Parent       = card
-
-        local barra = Instance.new("Frame")
-        barra.Size             = UDim2.new(0, 3, 1, -10)
-        barra.Position         = UDim2.new(0, 4, 0, 5)
-        barra.BackgroundColor3 = rarCor
-        barra.BorderSizePixel  = 0
-        barra.Parent           = card
-
-        Instance.new("UICorner", barra).CornerRadius = UDim.new(0, 2)
-
-        local imgFrame = Instance.new("Frame")
-        imgFrame.Size             = UDim2.new(0, 48, 0, 48)
-        imgFrame.Position         = UDim2.new(0, 12, 0, 8)
-        imgFrame.BackgroundColor3 = BG
-        imgFrame.BorderSizePixel  = 0
-        imgFrame.Parent           = card
-
-        Instance.new("UICorner", imgFrame).CornerRadius = UDim.new(0, 5)
-
-        local imgStroke = Instance.new("UIStroke")
-        imgStroke.Color        = rarCor
-        imgStroke.Thickness    = 1
-        imgStroke.Transparency = 0.5
-        imgStroke.Parent       = imgFrame
-
-        local img = Instance.new("ImageLabel")
-        img.Size              = UDim2.new(1, -4, 1, -4)
-        img.Position          = UDim2.new(0, 2, 0, 2)
-        img.BackgroundTransparency = 1
-        img.ScaleType         = Enum.ScaleType.Fit
-        img.Image             = rec.icon or ""
-        img.Parent            = imgFrame
-
-        local nameL = Instance.new("TextLabel")
-        nameL.Size              = UDim2.new(1, -80, 0, 14)
-        nameL.Position          = UDim2.new(0, 66, 0, 6)
-        nameL.BackgroundTransparency = 1
-        nameL.Text              = rec.name or "?"
-        nameL.TextColor3        = Color3.fromRGB(240, 240, 245)
-        nameL.Font              = Enum.Font.GothamBold
-        nameL.TextSize          = 11
-        nameL.TextXAlignment    = Enum.TextXAlignment.Left
-        nameL.TextTruncate      = Enum.TextTruncate.AtEnd
-        nameL.Parent            = card
-
-        local rarL = Instance.new("TextLabel")
-        rarL.Size              = UDim2.new(1, -80, 0, 12)
-        rarL.Position          = UDim2.new(0, 66, 0, 20)
-        rarL.BackgroundTransparency = 1
-        rarL.Text              = "★ " .. (rec.rarity or "?")
-        rarL.TextColor3        = rarCor
-        rarL.Font              = Enum.Font.GothamBold
-        rarL.TextSize          = 9
-        rarL.TextXAlignment    = Enum.TextXAlignment.Left
-        rarL.Parent            = card
-
-        local distL = Instance.new("TextLabel")
-        distL.Size              = UDim2.new(1, -80, 0, 12)
-        distL.Position          = UDim2.new(0, 66, 0, 32)
-        distL.BackgroundTransparency = 1
-        distL.Text              = "📏 " .. rec.dist .. "m  ⚖ " .. (RARITY_SCORE_MAP[rec.rarity] or 100)
-        distL.TextColor3        = Color3.fromRGB(150, 150, 160)
-        distL.Font              = Enum.Font.Gotham
-        distL.TextSize          = 9
-        distL.TextXAlignment    = Enum.TextXAlignment.Left
-        distL.Parent            = card
-
-        if i == 1 then
-            local badge = Instance.new("TextLabel")
-            badge.Size              = UDim2.new(0, 56, 0, 12)
-            badge.Position          = UDim2.new(1, -62, 1, -16)
-            badge.BackgroundColor3 = VERDE
-            badge.BorderSizePixel  = 0
-            badge.Text              = "PRÓXIMO"
-            badge.TextColor3        = BG
-            badge.Font              = Enum.Font.GothamBlack
-            badge.TextSize          = 8
-            badge.Parent            = card
-
-            Instance.new("UICorner", badge).CornerRadius = UDim.new(0, 3)
-        end
-    end
-end
+end)
 
 -- ============================================
 -- SISTEMA DE ABAS
@@ -1520,22 +1478,18 @@ local btnKB,    contKB,    labelKB,    setaKB,    barraKB,    bordaKB,    bounce
 local btnBypass, contBypass, labelBypass, setaBypass, barraBypass, bordaBypass, bounceBypass =
     criarBotaoCyber(30, "🔥 BYPASS", 4)
 
-local btnESP,   contESP,   labelESP,   setaESP,   barraESP,   bordaESP,   bounceESP   =
-    criarBotaoCyber(30, "🥚 ESP OVOS", 5)
-
 local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounceDst   =
-    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 6)
+    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 5)
 
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
-    criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
+    criarBotaoCyber(30, "🎯 RESET SPAWN", 6)
 
--- Botão do Painel Flutuante
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
-    criarBotaoCyber(30, "🪟 PAINEL FLUTUANTE", 8)
+    criarBotaoCyber(30, "🌌 TP-EGG", 7)
 
 -- ============================================
--- PAINEL FLUTUANTE INTEGRADO (--!nonstrict.txt)
+-- PAINEL FLUTUANTE
 -- ============================================
 local PainelFlutuante = { gui = nil, aberto = false }
 
@@ -1675,7 +1629,7 @@ local function criarPainelFlutuante()
     local function findNests()
         local guardAreas
         for _, d in ipairs(Workspace:GetDescendants()) do
-            if d.Name == "GuardAreas" then guardAreas = d; break end
+            if d.Name == "GuardAreas" then guardAreas = d break end
         end
         if not guardAreas then
             log("GuardAreas NAO encontrado.", Color3.fromRGB(240, 120, 120))
@@ -1683,7 +1637,7 @@ local function criarPainelFlutuante()
         end
         local forest
         for _, d in ipairs(guardAreas:GetDescendants()) do
-            if d.Name == "Forest" then forest = d; break end
+            if d.Name == "Forest" then forest = d break end
         end
         if not forest then
             log("Forest NAO encontrado.", Color3.fromRGB(240, 120, 120))
@@ -1692,7 +1646,7 @@ local function criarPainelFlutuante()
         local nests = forest:FindFirstChild("Nests")
         if not nests then
             for _, d in ipairs(forest:GetDescendants()) do
-                if d.Name == "Nests" then nests = d; break end
+                if d.Name == "Nests" then nests = d break end
             end
         end
         if not nests then
@@ -1911,9 +1865,9 @@ local function togglePainelFlutuante()
     PainelFlutuante.aberto = not PainelFlutuante.aberto
     PainelFlutuante.gui.Enabled = PainelFlutuante.aberto
     if PainelFlutuante.aberto then
-        Toast("Painel Flutuante ON", VERDE)
+        Toast("TP-EGG ON", VERDE)
     else
-        Toast("Painel Flutuante OFF", AMARELO)
+        Toast("TP-EGG OFF", AMARELO)
     end
 end
 
@@ -1984,42 +1938,6 @@ btnMin.MouseButton1Click:Connect(function()
     }):Play()
 end)
 
--- ============================================
--- FUNÇÃO CENTRAL DO ESP (sincroniza os 2 botões)
--- ============================================
-local function setEspState(novo)
-    espOvosAtivo = novo
-
-    -- Botão da aba 👁️
-    if espOvosAtivo then
-        btnEyeToggle.Text = "🥚 ESP Ovos: ON"
-        btnEyeToggle.TextColor3 = VERDE
-        btnEyeToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
-    else
-        btnEyeToggle.Text = "🥚 ESP Ovos: OFF"
-        btnEyeToggle.TextColor3 = Color3.fromRGB(255, 190, 200)
-        btnEyeToggle.BackgroundColor3 = BG_BTN
-    end
-
-    -- Botão da aba Funções
-    if labelESP then
-        labelESP.Text = espOvosAtivo and "🥚 ESP OVOS  [ON]" or "🥚 ESP OVOS"
-    end
-
-    -- Limpa ao desligar
-    if not espOvosAtivo then
-        limparTudoESP(activeEggESP)
-        atualizarListaEye({})
-    end
-
-    Toast(espOvosAtivo and "ESP ON" or "ESP OFF",
-          espOvosAtivo and VERDE or AMARELO)
-end
-
-btnEyeToggle.MouseButton1Click:Connect(function()
-    setEspState(not espOvosAtivo)
-end)
-
 -- Callbacks
 btnAnti.MouseButton1Click:Connect(function()
     bounceAnti()
@@ -2043,11 +1961,6 @@ btnKB.MouseButton1Click:Connect(function()
     end
 end)
 
-btnESP.MouseButton1Click:Connect(function()
-    bounceESP()
-    setEspState(not espOvosAtivo)
-end)
-
 btnDst.MouseButton1Click:Connect(function()
     bounceDst()
     if not Teleporte.refs() then return end
@@ -2061,13 +1974,11 @@ btnReset.MouseButton1Click:Connect(function()
     Destino.usarSpawn = true
 end)
 
--- Callback do Painel Flutuante
 btnFlutuante.MouseButton1Click:Connect(function()
     bounceFlutuante()
     togglePainelFlutuante()
 end)
 
--- Botão TP-AREA
 btnTpArea2.MouseButton1Click:Connect(function()
     executarTpAreaIntegrado(
         AreaSelecionada,
@@ -2127,22 +2038,6 @@ end)
 
 task.spawn(function()
     while gui.Parent do
-        if espOvosAtivo then
-            contESP.BackgroundColor3       = Color3.fromRGB(20, 55, 28)
-            barraESP.BackgroundColor3      = VERDE
-            bordaESP.Color                 = VERDE
-            labelESP.TextColor3            = Color3.fromRGB(180, 255, 200)
-            setaESP.TextColor3             = VERDE
-            labelESP.Text                  = "🥚 ESP OVOS  [ON]"
-        else
-            contESP.BackgroundColor3       = BG_BTN
-            barraESP.BackgroundColor3      = ROXO
-            bordaESP.Color                 = ROXO_DARK
-            labelESP.TextColor3            = Color3.fromRGB(230, 220, 255)
-            setaESP.TextColor3             = ROXO
-            labelESP.Text                  = "🥚 ESP OVOS"
-        end
-
         if armado then
             contAnti.BackgroundColor3     = Color3.fromRGB(20, 55, 28)
             barraAnti.BackgroundColor3    = VERDE
@@ -2221,11 +2116,7 @@ task.spawn(function()
             labelFlutuante.Text              = "🌌 TP-EGG"
         end
 
-        if espOvosAtivo then
-            ledRodape.BackgroundColor3    = VERDE
-            labelStatus.TextColor3        = VERDE
-            labelStatus.Text              = "STATUS: ESP ATIVO"
-        elseif AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
+        if AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
             ledRodape.BackgroundColor3    = VERMELHO
             labelStatus.TextColor3        = VERMELHO
             labelStatus.Text              = "STATUS: ANTI-TRAP ON"
@@ -2248,143 +2139,6 @@ task.spawn(function()
         end
 
         task.wait(0.15)
-    end
-end)
-
--- ============================================
--- ESP LOOP PRINCIPAL (estabilizado)
--- ============================================
-task.spawn(function()
-    local INTERVALO       = 0.15
-    local INTERVALO_LISTA = 0.5
-    local ULTIMA_LISTA    = 0
-
-    while gui.Parent do
-        task.wait(INTERVALO)
-
-        if not espOvosAtivo or not EggState or not EggState.ReadFieldEggs then
-            if next(activeEggESP) then
-                limparTudoESP(activeEggESP)
-                atualizarListaEye({})
-            end
-        else
-            local ok, snapshot = pcall(EggState.ReadFieldEggs)
-            if ok and snapshot and snapshot.Records then
-                local char  = LocalPlayer.Character
-                local hrp   = char and char:FindFirstChild("HumanoidRootPart")
-                local myPos = hrp and hrp.Position or Vector3.zero
-
-                local currentUids = {}
-                local visiveis    = {}
-                local agora       = tick()
-
-                for _, record in ipairs(snapshot.Records) do
-                    if record.State == "Slot" and record.BoundsCFrame then
-                        local eggPos = record.BoundsCFrame.Position
-                        local dist   = math.floor((eggPos - myPos).Magnitude)
-
-                        if dist <= maxEspDistance then
-                            local rarityName = GetEggRarityInfo(record)
-
-                            if targetRarityName == "Todos"
-                            or rarityName:lower() == targetRarityName:lower() then
-
-                                local uid = record.Uid or tostring(record.BoundsCFrame)
-                                currentUids[uid] = true
-
-                                if not activeEggESP[uid] then
-                                    local bb = Instance.new("BillboardGui")
-                                    bb.Name        = "ESP_EGG_" .. uid
-                                    bb.AlwaysOnTop = true
-                                    bb.Size        = UDim2.fromOffset(140, 80)
-                                    bb.StudsOffset = Vector3.new(0, 3, 0)
-                                    bb.LightInfluence = 0
-                                    bb.MaxDistance = maxEspDistance
-
-                                    local container = Instance.new("Frame")
-                                    container.Size = UDim2.fromScale(1, 1)
-                                    container.BackgroundTransparency = 1
-                                    container.Parent = bb
-
-                                    local layout2 = Instance.new("UIListLayout")
-                                    layout2.SortOrder = Enum.SortOrder.LayoutOrder
-                                    layout2.HorizontalAlignment = Enum.HorizontalAlignment.Center
-                                    layout2.VerticalAlignment   = Enum.VerticalAlignment.Center
-                                    layout2.Padding = UDim.new(0, 2)
-                                    layout2.Parent = container
-
-                                    local petImage = Instance.new("ImageLabel")
-                                    petImage.Name = "PetIcon"
-                                    petImage.Size = UDim2.fromOffset(36, 36)
-                                    petImage.BackgroundTransparency = 1
-                                    petImage.ScaleType = Enum.ScaleType.Fit
-                                    petImage.LayoutOrder = 1
-                                    petImage.Parent = container
-
-                                    local textLabel = Instance.new("TextLabel")
-                                    textLabel.Name = "EggText"
-                                    textLabel.Size = UDim2.new(1, 0, 0, 30)
-                                    textLabel.BackgroundTransparency = 1
-                                    textLabel.Font = Enum.Font.GothamBold
-                                    textLabel.TextSize = 12
-                                    textLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-                                    textLabel.TextStrokeTransparency = 0.2
-                                    textLabel.LayoutOrder = 2
-                                    textLabel.Parent = container
-
-                                    bb.Parent = espFolder
-                                    activeEggESP[uid] = {
-                                        gui = bb, label = textLabel, image = petImage
-                                    }
-                                end
-
-                                local espItem = activeEggESP[uid]
-                                if espItem then
-                                    espItem.gui.StudsOffsetWorldSpace =
-                                        eggPos + Vector3.new(0, 2.5, 0)
-
-                                    local cor = RARITY_COLOR[rarityName]
-                                        or Color3.fromRGB(0, 255, 0)
-                                    espItem.label.TextColor3 = cor
-                                    espItem.label.Text = string.format(
-                                        "%s\n[%s] - %dm",
-                                        record.AssetCategory or "Ovo", rarityName, dist
-                                    )
-
-                                    local iconAsset = GetPetIcon(record)
-                                    if iconAsset then
-                                        if espItem.image.Image ~= iconAsset then
-                                            espItem.image.Image = iconAsset
-                                        end
-                                        espItem.image.Visible = true
-                                    else
-                                        espItem.image.Visible = false
-                                    end
-                                end
-
-                                table.insert(visiveis, {
-                                    name   = record.AssetCategory or record.Pet or "Ovo",
-                                    rarity = rarityName,
-                                    dist   = dist,
-                                    icon   = GetPetIcon(record),
-                                })
-                            end
-                        end
-                    end
-                end
-
-                for uid in pairs(activeEggESP) do
-                    if not currentUids[uid] then
-                        limparObjetoESP(activeEggESP, uid)
-                    end
-                end
-
-                if agora - ULTIMA_LISTA >= INTERVALO_LISTA then
-                    ULTIMA_LISTA = agora
-                    atualizarListaEye(visiveis)
-                end
-            end
-        end
     end
 end)
 
