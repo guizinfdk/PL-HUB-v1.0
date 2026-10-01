@@ -5,6 +5,8 @@ local TweenService     = game:GetService("TweenService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local Workspace        = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService  = game:GetService("TeleportService")
+local HttpService      = game:GetService("HttpService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui   = LocalPlayer:WaitForChild("PlayerGui")
@@ -678,27 +680,46 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- TabBar
-local tabBar = Instance.new("Frame")
-tabBar.Size = UDim2.new(1, -16, 0, 22)
-tabBar.Position = UDim2.new(0, 8, 0, 38)
-tabBar.BackgroundColor3 = BG_BTN
-tabBar.BorderSizePixel = 0
-tabBar.ZIndex = 3
-tabBar.Parent = menu
-Instance.new("UICorner", tabBar).CornerRadius = UDim.new(0, 6)
+-- ============================================
+-- TabBar (com scroll horizontal)
+-- ============================================
+local tabBarHolder = Instance.new("Frame")
+tabBarHolder.Size = UDim2.new(1, -16, 0, 22)
+tabBarHolder.Position = UDim2.new(0, 8, 0, 38)
+tabBarHolder.BackgroundColor3 = BG_BTN
+tabBarHolder.BorderSizePixel = 0
+tabBarHolder.ZIndex = 3
+tabBarHolder.ClipsDescendants = true
+tabBarHolder.Parent = menu
+Instance.new("UICorner", tabBarHolder).CornerRadius = UDim.new(0, 6)
+
+local tabScroll = Instance.new("ScrollingFrame")
+tabScroll.Size = UDim2.new(1, 0, 1, 0)
+tabScroll.BackgroundTransparency = 1
+tabScroll.BorderSizePixel = 0
+tabScroll.ScrollBarThickness = 0
+tabScroll.ScrollingDirection = Enum.ScrollingDirection.X
+tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+tabScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
+tabScroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+tabScroll.ZIndex = 3
+tabScroll.Parent = tabBarHolder
 
 local tabLayout = Instance.new("UIListLayout")
 tabLayout.FillDirection = Enum.FillDirection.Horizontal
 tabLayout.Padding = UDim.new(0, 2)
 tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
-tabLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 tabLayout.VerticalAlignment = Enum.VerticalAlignment.Center
-tabLayout.Parent = tabBar
+tabLayout.Parent = tabScroll
+
+local tabPad = Instance.new("UIPadding")
+tabPad.PaddingLeft = UDim.new(0, 2)
+tabPad.PaddingRight = UDim.new(0, 2)
+tabPad.Parent = tabScroll
 
 local function criarTabBtn(texto, ordem)
     local b = Instance.new("TextButton")
-    b.Size = UDim2.new(1/4, -3, 1, -4)
+    b.Size = UDim2.new(0, 40, 1, -4)
     b.BackgroundColor3 = BG
     b.BorderSizePixel = 0
     b.Font = Enum.Font.GothamBold
@@ -707,7 +728,7 @@ local function criarTabBtn(texto, ordem)
     b.Text = texto
     b.LayoutOrder = ordem
     b.ZIndex = 4
-    b.Parent = tabBar
+    b.Parent = tabScroll
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 4)
     return b
 end
@@ -716,6 +737,7 @@ local btnTabFunc  = criarTabBtn("🎯", 1)
 local btnTabTps   = criarTabBtn("🌀", 2)
 local btnTabSpeed = criarTabBtn("⚡", 3)
 local btnTabEye   = criarTabBtn("👁️", 4)
+local btnTabHop   = criarTabBtn("🌐", 5)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -748,6 +770,14 @@ containerEye.BackgroundTransparency = 1
 containerEye.ZIndex = 3
 containerEye.Visible = false
 containerEye.Parent = menu
+
+local containerHop = Instance.new("Frame")
+containerHop.Size = UDim2.new(1, 0, 1, -98)
+containerHop.Position = UDim2.new(0, 0, 0, 64)
+containerHop.BackgroundTransparency = 1
+containerHop.ZIndex = 3
+containerHop.Visible = false
+containerHop.Parent = menu
 
 -- Scroll Funções
 local scroll = Instance.new("ScrollingFrame")
@@ -1099,7 +1129,6 @@ local function GetPetIcon(record)
     return nil
 end
 
--- Botão de filtro
 local btnEyeFiltro = Instance.new("TextButton")
 btnEyeFiltro.Size = UDim2.new(1, -16, 0, 22)
 btnEyeFiltro.Position = UDim2.new(0, 8, 0, 2)
@@ -1113,7 +1142,6 @@ btnEyeFiltro.ZIndex = 4
 btnEyeFiltro.Parent = containerEye
 Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 5)
 
--- Input distância
 local distInput = Instance.new("TextBox")
 distInput.Size = UDim2.new(1, -16, 0, 22)
 distInput.Position = UDim2.new(0, 8, 0, 28)
@@ -1128,7 +1156,6 @@ distInput.ZIndex = 4
 distInput.Parent = containerEye
 Instance.new("UICorner", distInput).CornerRadius = UDim.new(0, 5)
 
--- Lista (scroll)
 local lista = Instance.new("ScrollingFrame")
 lista.Name = "ListaOvos"
 lista.Size = UDim2.new(1, 0, 1, -60)
@@ -1156,7 +1183,6 @@ listaPad.PaddingTop = UDim.new(0, 2)
 listaPad.PaddingBottom = UDim.new(0, 4)
 listaPad.Parent = lista
 
--- Funções da lista
 local function limparListaOvos()
     for uid, item in pairs(eggItems) do
         if item.frame then item.frame:Destroy() end
@@ -1293,7 +1319,6 @@ local function atualizarListaOvos()
     lista.CanvasSize = UDim2.new(0, 0, 0, #ovosValidos * 40)
 end
 
--- Filtro
 local niveisFiltroEye = {
     "Todos","Common","Uncommon","Rare","Epic","Legendary",
     "Mythic","Cosmic","Secret","Eternal","Divine"
@@ -1320,12 +1345,332 @@ distInput.FocusLost:Connect(function()
     task.spawn(function() pcall(atualizarListaOvos) end)
 end)
 
--- Loop de atualização da lista
 task.spawn(function()
     while gui.Parent do
         task.wait(0.1)
         pcall(atualizarListaOvos)
     end
+end)
+
+-- ============================================
+-- ABA 🌐 — SERVER HOP
+-- ============================================
+local HopState = {
+    Servers    = {},
+    Items      = {},
+    FiltroIdx  = 1,
+    Carregando = false,
+}
+
+local HopFiltros = {
+    { label = "TODOS",         max = 999 },
+    { label = "0-1 PLAYER",    max = 1 },
+    { label = "0-3 PLAYERS",   max = 3 },
+    { label = "0-5 PLAYERS",   max = 5 },
+    { label = "0-10 PLAYERS",  max = 10 },
+}
+
+local btnHopFiltro = Instance.new("TextButton")
+btnHopFiltro.Size = UDim2.new(1, -16, 0, 22)
+btnHopFiltro.Position = UDim2.new(0, 8, 0, 2)
+btnHopFiltro.BackgroundColor3 = BG_BTN
+btnHopFiltro.BorderSizePixel = 0
+btnHopFiltro.Font = Enum.Font.GothamBold
+btnHopFiltro.TextSize = 10
+btnHopFiltro.TextColor3 = Color3.fromRGB(230, 220, 255)
+btnHopFiltro.Text = "Filtro: TODOS"
+btnHopFiltro.ZIndex = 4
+btnHopFiltro.Parent = containerHop
+Instance.new("UICorner", btnHopFiltro).CornerRadius = UDim.new(0, 5)
+
+local hopStatus = Instance.new("TextLabel")
+hopStatus.Size = UDim2.new(1, -16, 0, 12)
+hopStatus.Position = UDim2.new(0, 8, 0, 26)
+hopStatus.BackgroundTransparency = 1
+hopStatus.Font = Enum.Font.Gotham
+hopStatus.TextSize = 9
+hopStatus.TextColor3 = Color3.fromRGB(180, 180, 200)
+hopStatus.TextXAlignment = Enum.TextXAlignment.Left
+hopStatus.Text = "Pronto."
+hopStatus.ZIndex = 4
+hopStatus.Parent = containerHop
+
+local btnHopEnter = Instance.new("TextButton")
+btnHopEnter.Size = UDim2.new(1, -16, 0, 26)
+btnHopEnter.Position = UDim2.new(0, 8, 0, 42)
+btnHopEnter.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
+btnHopEnter.BorderSizePixel = 0
+btnHopEnter.Font = Enum.Font.GothamBold
+btnHopEnter.TextSize = 11
+btnHopEnter.TextColor3 = Color3.fromRGB(255, 255, 255)
+btnHopEnter.Text = "Entrar no Melhor"
+btnHopEnter.ZIndex = 4
+btnHopEnter.Parent = containerHop
+Instance.new("UICorner", btnHopEnter).CornerRadius = UDim.new(0, 6)
+
+local btnHopLista = Instance.new("TextButton")
+btnHopLista.Size = UDim2.new(1, -16, 0, 22)
+btnHopLista.Position = UDim2.new(0, 8, 0, 72)
+btnHopLista.BackgroundColor3 = BG_BTN
+btnHopLista.BorderSizePixel = 0
+btnHopLista.Font = Enum.Font.GothamBold
+btnHopLista.TextSize = 10
+btnHopLista.TextColor3 = Color3.fromRGB(230, 220, 255)
+btnHopLista.Text = "Ver Lista de Servidores"
+btnHopLista.ZIndex = 4
+btnHopLista.Parent = containerHop
+Instance.new("UICorner", btnHopLista).CornerRadius = UDim.new(0, 6)
+
+local hopScroll = Instance.new("ScrollingFrame")
+hopScroll.Size = UDim2.new(1, -16, 1, -102)
+hopScroll.Position = UDim2.new(0, 8, 0, 98)
+hopScroll.BackgroundColor3 = Color3.fromRGB(20, 16, 30)
+hopScroll.BorderSizePixel = 0
+hopScroll.ScrollBarThickness = 4
+hopScroll.ScrollBarImageColor3 = ROXO
+hopScroll.ScrollBarImageTransparency = 0.3
+hopScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+hopScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+hopScroll.ScrollingDirection = Enum.ScrollingDirection.Y
+hopScroll.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
+hopScroll.ZIndex = 3
+hopScroll.Parent = containerHop
+Instance.new("UICorner", hopScroll).CornerRadius = UDim.new(0, 6)
+
+local hopLayout = Instance.new("UIListLayout")
+hopLayout.Padding = UDim.new(0, 3)
+hopLayout.SortOrder = Enum.SortOrder.LayoutOrder
+hopLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+hopLayout.Parent = hopScroll
+
+local hopPad = Instance.new("UIPadding")
+hopPad.PaddingTop = UDim.new(0, 3)
+hopPad.PaddingBottom = UDim.new(0, 3)
+hopPad.Parent = hopScroll
+
+local function hopSetStatus(txt, cor)
+    hopStatus.Text = txt
+    hopStatus.TextColor3 = cor or Color3.fromRGB(180, 180, 200)
+end
+
+local function hopLimparLista()
+    for _, item in ipairs(HopState.Items) do item:Destroy() end
+    HopState.Items = {}
+    hopScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+end
+
+local function hopAddMsg(msg, cor)
+    local lbl = Instance.new("TextLabel")
+    lbl.Size = UDim2.new(1, -4, 0, 22)
+    lbl.BackgroundTransparency = 1
+    lbl.Text = msg
+    lbl.TextColor3 = cor or Color3.fromRGB(180, 180, 200)
+    lbl.Font = Enum.Font.Gotham
+    lbl.TextSize = 10
+    lbl.TextWrapped = true
+    lbl.TextXAlignment = Enum.TextXAlignment.Left
+    lbl.Parent = hopScroll
+    table.insert(HopState.Items, lbl)
+end
+
+local function hopHttpGet(url)
+    if game and game.HttpGet then
+        local ok, result = pcall(function() return game:HttpGet(url) end)
+        if ok and result and #result > 0 then return true, result end
+    end
+    local ok2, result2 = pcall(function() return HttpService:GetAsync(url, true) end)
+    if ok2 and result2 and #result2 > 0 then return true, result2 end
+    return false, "HTTP falhou."
+end
+
+local function hopFetchServers()
+    local url = "https://games.roblox.com/v1/games/" .. game.PlaceId
+        .. "/servers/Public?sortOrder=Asc&limit=100"
+    local ok, raw = hopHttpGet(url)
+    if not ok or not raw or raw == "" then return nil end
+    local ok2, data = pcall(HttpService.JSONDecode, HttpService, raw)
+    if not ok2 or not data or not data.data then return nil end
+    local currentId = tostring(game.JobId)
+    local lista = {}
+    for _, s in ipairs(data.data) do
+        if s.id and tostring(s.id) ~= currentId and s.playing < s.maxPlayers then
+            table.insert(lista, {
+                id = tostring(s.id),
+                playing = s.playing or 0,
+                maxPlayers = s.maxPlayers or 0,
+                ping = s.ping or 0,
+            })
+        end
+    end
+    table.sort(lista, function(a, b) return a.playing < b.playing end)
+    return lista
+end
+
+local function hopVerificarVaga(serverId)
+    local url = "https://games.roblox.com/v1/games/" .. game.PlaceId
+        .. "/servers/Public?sortOrder=Asc&limit=100"
+    local ok, raw = hopHttpGet(url)
+    if not ok or not raw then return false, nil end
+    local ok2, data = pcall(HttpService.JSONDecode, HttpService, raw)
+    if not ok2 or not data or not data.data then return false, nil end
+    for _, s in ipairs(data.data) do
+        if tostring(s.id) == tostring(serverId) then
+            return (s.playing or 0) < (s.maxPlayers or 0), {
+                id = tostring(s.id), playing = s.playing or 0,
+                maxPlayers = s.maxPlayers or 0,
+            }
+        end
+    end
+    return false, nil
+end
+
+local function hopAplicarFiltro(lista)
+    local opt = HopFiltros[HopState.FiltroIdx]
+    local out = {}
+    for _, s in ipairs(lista) do
+        if s.playing <= opt.max then table.insert(out, s) end
+    end
+    return out
+end
+
+local function hopTentarTeleport(lista, maxTentativas)
+    maxTentativas = maxTentativas or 5
+    local t = 0
+    for _, s in ipairs(lista) do
+        if t >= maxTentativas then break end
+        t = t + 1
+        local temVaga, dados = hopVerificarVaga(s.id)
+        if temVaga and dados then
+            hopSetStatus("Tentando " .. t .. ": " .. dados.playing .. "/" .. dados.maxPlayers,
+                Color3.fromRGB(120, 180, 255))
+            local ok = pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, dados.id, LocalPlayer)
+            end)
+            if ok then return true, dados end
+            task.wait(0.6)
+        end
+    end
+    return false, nil
+end
+
+local function hopRenderServers(lista)
+    hopLimparLista()
+    if not lista or #lista == 0 then
+        hopAddMsg("Nenhum servidor com vaga.", Color3.fromRGB(230, 150, 150))
+        return
+    end
+    for i, s in ipairs(lista) do
+        local row = Instance.new("Frame")
+        row.Size = UDim2.new(1, -4, 0, 24)
+        row.BackgroundColor3 = BG_BTN
+        row.BorderSizePixel = 0
+        row.LayoutOrder = i
+        row.Parent = hopScroll
+        Instance.new("UICorner", row).CornerRadius = UDim.new(0, 5)
+
+        local info = Instance.new("TextLabel")
+        info.Size = UDim2.new(1, -54, 1, 0)
+        info.Position = UDim2.new(0, 8, 0, 0)
+        info.BackgroundTransparency = 1
+        info.Text = string.format("%d/%d jogadores", s.playing, s.maxPlayers)
+        info.TextColor3 = Color3.fromRGB(230, 220, 255)
+        info.Font = Enum.Font.Gotham
+        info.TextSize = 10
+        info.TextXAlignment = Enum.TextXAlignment.Left
+        info.Parent = row
+
+        local joinBtn = Instance.new("TextButton")
+        joinBtn.Size = UDim2.new(0, 44, 0, 18)
+        joinBtn.Position = UDim2.new(1, -48, 0.5, -9)
+        joinBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 200)
+        joinBtn.BorderSizePixel = 0
+        joinBtn.Font = Enum.Font.GothamBold
+        joinBtn.TextSize = 9
+        joinBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        joinBtn.Text = "JOIN"
+        joinBtn.Parent = row
+        Instance.new("UICorner", joinBtn).CornerRadius = UDim.new(0, 4)
+
+        joinBtn.MouseButton1Click:Connect(function()
+            joinBtn.Text = "..."
+            local temVaga, dados = hopVerificarVaga(s.id)
+            if not temVaga then
+                joinBtn.Text = "CHEIO"
+                hopSetStatus("Server cheio.", Color3.fromRGB(255, 100, 100))
+                task.wait(1.5)
+                joinBtn.Text = "JOIN"
+                return
+            end
+            hopSetStatus("Entrando...", Color3.fromRGB(120, 180, 255))
+            local ok = pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, dados.id, LocalPlayer)
+            end)
+            if not ok then
+                joinBtn.Text = "ERRO"
+                task.wait(1.5)
+                joinBtn.Text = "JOIN"
+            end
+        end)
+
+        table.insert(HopState.Items, row)
+    end
+end
+
+btnHopFiltro.MouseButton1Click:Connect(function()
+    HopState.FiltroIdx = HopState.FiltroIdx + 1
+    if HopState.FiltroIdx > #HopFiltros then HopState.FiltroIdx = 1 end
+    btnHopFiltro.Text = "Filtro: " .. HopFiltros[HopState.FiltroIdx].label
+    if #HopState.Servers > 0 then
+        hopRenderServers(hopAplicarFiltro(HopState.Servers))
+    end
+end)
+
+btnHopEnter.MouseButton1Click:Connect(function()
+    if HopState.Carregando then return end
+    HopState.Carregando = true
+    btnHopEnter.Text = "Procurando..."
+    hopSetStatus("Buscando o mais vazio...", Color3.fromRGB(255, 200, 50))
+    task.wait(0.1)
+    local lista = hopFetchServers()
+    if not lista or #lista == 0 then
+        hopSetStatus("Nenhum server com vaga.", Color3.fromRGB(255, 100, 100))
+        btnHopEnter.Text = "Entrar no Melhor"
+        HopState.Carregando = false
+        return
+    end
+    local filtrada = hopAplicarFiltro(lista)
+    if #filtrada == 0 then filtrada = lista end
+    hopSetStatus("Teleportando (top 5)...", Color3.fromRGB(120, 180, 255))
+    local sucesso, dados = hopTentarTeleport(filtrada, 5)
+    if sucesso then
+        hopSetStatus("Entrando em " .. dados.playing .. "/" .. dados.maxPlayers,
+            Color3.fromRGB(100, 255, 150))
+    else
+        hopSetStatus("Falha em todos os 5.", Color3.fromRGB(255, 100, 100))
+    end
+    btnHopEnter.Text = "Entrar no Melhor"
+    HopState.Carregando = false
+end)
+
+btnHopLista.MouseButton1Click:Connect(function()
+    if HopState.Carregando then return end
+    HopState.Carregando = true
+    btnHopLista.Text = "Buscando..."
+    hopSetStatus("Buscando servidores...", Color3.fromRGB(255, 200, 50))
+    task.wait(0.1)
+    local lista = hopFetchServers()
+    if not lista or #lista == 0 then
+        hopSetStatus("Nenhum server com vaga.", Color3.fromRGB(255, 100, 100))
+        btnHopLista.Text = "Ver Lista de Servidores"
+        HopState.Carregando = false
+        return
+    end
+    HopState.Servers = lista
+    local filtrada = hopAplicarFiltro(lista)
+    hopSetStatus(#filtrada .. " servers. Clica JOIN.", Color3.fromRGB(100, 255, 150))
+    btnHopLista.Text = "Ver Lista de Servidores"
+    hopRenderServers(filtrada)
+    HopState.Carregando = false
 end)
 
 -- ============================================
@@ -1337,6 +1682,7 @@ local function atualizarAbas()
     containerTps.Visible   = (abaAtiva == 2)
     containerSpeed.Visible = (abaAtiva == 3)
     containerEye.Visible   = (abaAtiva == 4)
+    containerHop.Visible   = (abaAtiva == 5)
 
     local function setCor(btn, ativo)
         if ativo then
@@ -1351,6 +1697,7 @@ local function atualizarAbas()
     setCor(btnTabTps,   abaAtiva == 2)
     setCor(btnTabSpeed, abaAtiva == 3)
     setCor(btnTabEye,   abaAtiva == 4)
+    setCor(btnTabHop,   abaAtiva == 5)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -1371,6 +1718,11 @@ end)
 
 btnTabEye.MouseButton1Click:Connect(function()
     abaAtiva = 4
+    atualizarAbas()
+end)
+
+btnTabHop.MouseButton1Click:Connect(function()
+    abaAtiva = 5
     atualizarAbas()
 end)
 
@@ -1918,7 +2270,7 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBar, containerFunc, containerTps, containerSpeed, containerEye, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBarHolder, containerFunc, containerTps, containerSpeed, containerEye, containerHop, faixaBase, rodape }
 local minimizado = false
 local tamanhoNormal = UDim2.new(0, 200, 0, 220)
 local tamanhoMin    = UDim2.new(0, 200, 0, 36)
