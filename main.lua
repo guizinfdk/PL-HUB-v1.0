@@ -51,35 +51,6 @@ local RARITY_SCORE_MAP = {
     ["Basic"]           = 100,  ["Common"]          = 100,
 }
 
-local RARITY_COLOR = {
-    ["Light & Dark"]    = Color3.fromRGB(255, 100, 255),
-    ["Titan"]           = Color3.fromRGB(255, 80, 80),
-    ["Divine"]          = Color3.fromRGB(255, 215, 0),
-    ["Transcendent"]    = Color3.fromRGB(255, 180, 255),
-    ["Superior"]        = Color3.fromRGB(200, 255, 100),
-    ["Eternal"]         = Color3.fromRGB(180, 220, 255),
-    ["Limited"]         = Color3.fromRGB(255, 200, 100),
-    ["Secret"]          = Color3.fromRGB(255, 100, 200),
-    ["Exotic"]          = Color3.fromRGB(255, 140, 60),
-    ["Cosmic"]          = Color3.fromRGB(160, 100, 255),
-    ["Exclusive"]       = Color3.fromRGB(255, 150, 50),
-    ["Admin"]           = Color3.fromRGB(255, 50, 50),
-    ["Mythic"]          = Color3.fromRGB(255, 60, 200),
-    ["Mythical"]        = Color3.fromRGB(255, 60, 200),
-    ["Prismatic"]       = Color3.fromRGB(150, 255, 200),
-    ["Rainbow"]         = Color3.fromRGB(255, 120, 120),
-    ["Squishy God"]     = Color3.fromRGB(120, 200, 255),
-    ["BrainrotGod"]     = Color3.fromRGB(255, 200, 0),
-    ["Legendary"]       = Color3.fromRGB(255, 200, 0),
-    ["Epic"]            = Color3.fromRGB(180, 80, 255),
-    ["Rare"]            = Color3.fromRGB(80, 150, 255),
-    ["SuperRare"]       = Color3.fromRGB(80, 200, 255),
-    ["Celestial"]       = Color3.fromRGB(200, 220, 255),
-    ["Uncommon"]        = Color3.fromRGB(100, 255, 100),
-    ["Basic"]           = Color3.fromRGB(200, 200, 200),
-    ["Common"]          = Color3.fromRGB(180, 180, 180),
-}
-
 -- TELEPORTE
 local Teleporte = {
     conn = nil, ativo = false, char = nil, hum = nil, root = nil,
@@ -681,7 +652,7 @@ gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
 -- ============================================
--- TabBar (com scroll horizontal)
+-- TabBar (com scroll horizontal) — 4 ABAS
 -- ============================================
 local tabBarHolder = Instance.new("Frame")
 tabBarHolder.Size = UDim2.new(1, -16, 0, 22)
@@ -736,8 +707,7 @@ end
 local btnTabFunc  = criarTabBtn("🎯", 1)
 local btnTabTps   = criarTabBtn("🌀", 2)
 local btnTabSpeed = criarTabBtn("⚡", 3)
-local btnTabEye   = criarTabBtn("👁️", 4)
-local btnTabHop   = criarTabBtn("🌐", 5)
+local btnTabHop   = criarTabBtn("🌐", 4)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -762,14 +732,6 @@ containerSpeed.BackgroundTransparency = 1
 containerSpeed.ZIndex = 3
 containerSpeed.Visible = false
 containerSpeed.Parent = menu
-
-local containerEye = Instance.new("Frame")
-containerEye.Size = UDim2.new(1, 0, 1, -98)
-containerEye.Position = UDim2.new(0, 0, 0, 64)
-containerEye.BackgroundTransparency = 1
-containerEye.ZIndex = 3
-containerEye.Visible = false
-containerEye.Parent = menu
 
 local containerHop = Instance.new("Frame")
 containerHop.Size = UDim2.new(1, 0, 1, -98)
@@ -1063,292 +1025,6 @@ btnSpeedToggle.MouseButton1Click:Connect(function()
     else
         iniciarSpeed()
         Toast("Speed ON", VERDE)
-    end
-end)
-
--- ============================================
--- ABA 👁️ — LISTA DE OVOS
--- ============================================
-local maxEspDistance   = 1000
-local targetRarityName = "Todos"
-local eggItems         = {}
-
-local function GetEggRarityInfo(egg)
-    if not egg then return "Common", 100 end
-    if egg.Rarity then
-        local r = egg.Rarity
-        local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
-        return name, RARITY_SCORE_MAP[name] or 100
-    end
-    local cat = egg.AssetCategory or egg.Category or egg.Name
-    if cat and AssetsData then
-        local aInfo = (AssetsData.Directory or AssetsData)[cat]
-        if aInfo and aInfo.Rarity then
-            local r = aInfo.Rarity
-            local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
-            return name, RARITY_SCORE_MAP[name] or 100
-        end
-    end
-    local areaData = AreasData and (AreasData.Directory or AreasData) and (AreasData.Directory or AreasData)[egg.AreaId]
-    local rarity = areaData and areaData.Rarity
-    local rarityId = (type(rarity) == "table" and (rarity._id or rarity.DisplayName or rarity.Name))
-        or (type(rarity) == "string" and rarity) or "Common"
-    local rInfo = (RarityData and (RarityData.Rarities or RarityData) or {})[rarityId] or {}
-    local rarityDisplayName = (type(rInfo) == "table" and (rInfo.DisplayName or rInfo._id))
-        or (type(rarity) == "table" and rarity.DisplayName) or rarityId or "Common"
-    return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
-end
-
-local function GetPetIcon(record)
-    if not record then return nil end
-    local rawIcon = record.Icon or record.PetIcon or record.ImageAsset or record.TextureId
-    if rawIcon then
-        return (type(rawIcon) == "number" or not string.match(tostring(rawIcon), "://"))
-            and ("rbxassetid://" .. tostring(rawIcon)) or tostring(rawIcon)
-    end
-    local targetName = record.Pet or record.PetId or record.PetName
-        or record.AssetCategory or record.Category
-    if targetName then
-        if PetsData then
-            local pInfo = (PetsData.Directory or PetsData)[targetName]
-            if pInfo and (pInfo.Icon or pInfo.Image or pInfo.AssetId) then
-                local img = pInfo.Icon or pInfo.Image or pInfo.AssetId
-                return (type(img) == "number" or not string.match(tostring(img), "://"))
-                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
-            end
-        end
-        if AssetsData then
-            local aInfo = (AssetsData.Directory or AssetsData)[targetName]
-            if aInfo and (aInfo.Icon or aInfo.Image or aInfo.AssetId) then
-                local img = aInfo.Icon or aInfo.Image or aInfo.AssetId
-                return (type(img) == "number" or not string.match(tostring(img), "://"))
-                    and ("rbxassetid://" .. tostring(img)) or tostring(img)
-            end
-        end
-    end
-    return nil
-end
-
-local btnEyeFiltro = Instance.new("TextButton")
-btnEyeFiltro.Size = UDim2.new(1, -16, 0, 22)
-btnEyeFiltro.Position = UDim2.new(0, 8, 0, 2)
-btnEyeFiltro.BackgroundColor3 = BG_BTN
-btnEyeFiltro.BorderSizePixel = 0
-btnEyeFiltro.Font = Enum.Font.GothamBold
-btnEyeFiltro.TextSize = 10
-btnEyeFiltro.TextColor3 = Color3.fromRGB(230, 220, 255)
-btnEyeFiltro.Text = "Filtro: Todos"
-btnEyeFiltro.ZIndex = 4
-btnEyeFiltro.Parent = containerEye
-Instance.new("UICorner", btnEyeFiltro).CornerRadius = UDim.new(0, 5)
-
-local distInput = Instance.new("TextBox")
-distInput.Size = UDim2.new(1, -16, 0, 22)
-distInput.Position = UDim2.new(0, 8, 0, 28)
-distInput.BackgroundColor3 = BG_BTN
-distInput.BorderSizePixel = 0
-distInput.Font = Enum.Font.GothamBold
-distInput.TextSize = 10
-distInput.TextColor3 = Color3.fromRGB(230, 220, 255)
-distInput.Text = tostring(maxEspDistance)
-distInput.PlaceholderText = "Distância máxima"
-distInput.ZIndex = 4
-distInput.Parent = containerEye
-Instance.new("UICorner", distInput).CornerRadius = UDim.new(0, 5)
-
-local lista = Instance.new("ScrollingFrame")
-lista.Name = "ListaOvos"
-lista.Size = UDim2.new(1, 0, 1, -60)
-lista.Position = UDim2.new(0, 0, 0, 56)
-lista.BackgroundTransparency = 1
-lista.BorderSizePixel = 0
-lista.ScrollBarThickness = 4
-lista.ScrollBarImageColor3 = ROXO
-lista.ScrollBarImageTransparency = 0.3
-lista.CanvasSize = UDim2.new(0, 0, 0, 0)
-lista.AutomaticCanvasSize = Enum.AutomaticSize.Y
-lista.ScrollingDirection = Enum.ScrollingDirection.Y
-lista.ElasticBehavior = Enum.ElasticBehavior.WhenScrollable
-lista.ZIndex = 3
-lista.Parent = containerEye
-
-local listaLayout = Instance.new("UIListLayout")
-listaLayout.Padding = UDim.new(0, 4)
-listaLayout.SortOrder = Enum.SortOrder.LayoutOrder
-listaLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
-listaLayout.Parent = lista
-
-local listaPad = Instance.new("UIPadding")
-listaPad.PaddingTop = UDim.new(0, 2)
-listaPad.PaddingBottom = UDim.new(0, 4)
-listaPad.Parent = lista
-
-local function limparListaOvos()
-    for uid, item in pairs(eggItems) do
-        if item.frame then item.frame:Destroy() end
-        eggItems[uid] = nil
-    end
-    lista.CanvasSize = UDim2.new(0, 0, 0, 0)
-end
-
-local function criarItemOvo()
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -8, 0, 36)
-    frame.BackgroundColor3 = BG_BTN
-    frame.BorderSizePixel = 0
-    frame.ZIndex = 3
-    frame.Parent = lista
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 5)
-
-    local icon = Instance.new("ImageLabel")
-    icon.Size = UDim2.new(0, 28, 0, 28)
-    icon.Position = UDim2.new(0, 4, 0.5, -14)
-    icon.BackgroundTransparency = 1
-    icon.ScaleType = Enum.ScaleType.Fit
-    icon.Image = ""
-    icon.ZIndex = 4
-    icon.Parent = frame
-
-    local labelNome = Instance.new("TextLabel")
-    labelNome.Size = UDim2.new(1, -80, 0, 14)
-    labelNome.Position = UDim2.new(0, 36, 0, 3)
-    labelNome.BackgroundTransparency = 1
-    labelNome.TextColor3 = Color3.fromRGB(240, 240, 245)
-    labelNome.Font = Enum.Font.GothamBold
-    labelNome.TextSize = 10
-    labelNome.TextXAlignment = Enum.TextXAlignment.Left
-    labelNome.TextTruncate = Enum.TextTruncate.AtEnd
-    labelNome.ZIndex = 4
-    labelNome.Parent = frame
-
-    local labelRarity = Instance.new("TextLabel")
-    labelRarity.Size = UDim2.new(1, -80, 0, 12)
-    labelRarity.Position = UDim2.new(0, 36, 0, 18)
-    labelRarity.BackgroundTransparency = 1
-    labelRarity.TextColor3 = Color3.fromRGB(80, 240, 110)
-    labelRarity.Font = Enum.Font.Gotham
-    labelRarity.TextSize = 9
-    labelRarity.TextXAlignment = Enum.TextXAlignment.Left
-    labelRarity.TextTruncate = Enum.TextTruncate.AtEnd
-    labelRarity.ZIndex = 4
-    labelRarity.Parent = frame
-
-    local labelDist = Instance.new("TextLabel")
-    labelDist.Size = UDim2.new(0, 40, 1, 0)
-    labelDist.Position = UDim2.new(1, -42, 0, 0)
-    labelDist.BackgroundTransparency = 1
-    labelDist.TextColor3 = Color3.fromRGB(150, 150, 160)
-    labelDist.Font = Enum.Font.Gotham
-    labelDist.TextSize = 9
-    labelDist.TextXAlignment = Enum.TextXAlignment.Right
-    labelDist.ZIndex = 4
-    labelDist.Parent = frame
-
-    return { frame = frame, icon = icon, labelNome = labelNome, labelRarity = labelRarity, labelDist = labelDist }
-end
-
-local function atualizarListaOvos()
-    local char = LocalPlayer.Character
-    local hrp  = char and char:FindFirstChild("HumanoidRootPart")
-    local myPos = hrp and hrp.Position or Vector3.zero
-
-    if not EggState or not EggState.ReadFieldEggs then return end
-    local ok, snapshot = pcall(EggState.ReadFieldEggs)
-    if not ok or not snapshot or not snapshot.Records then return end
-
-    local ovosValidos = {}
-    local currentUids = {}
-
-    for _, record in ipairs(snapshot.Records) do
-        if record.State == "Slot" and record.BoundsCFrame then
-            local eggPos = record.BoundsCFrame.Position
-            local dist = math.floor((eggPos - myPos).Magnitude)
-            if dist <= maxEspDistance then
-                local rarityName = GetEggRarityInfo(record)
-                if targetRarityName == "Todos" or rarityName:lower() == targetRarityName:lower() then
-                    local uid = record.Uid or tostring(record.BoundsCFrame)
-                    currentUids[uid] = true
-                    table.insert(ovosValidos, {
-                        uid = uid,
-                        record = record,
-                        rarityName = rarityName,
-                        dist = dist,
-                        score = RARITY_SCORE_MAP[rarityName] or 100,
-                    })
-                end
-            end
-        end
-    end
-
-    table.sort(ovosValidos, function(a, b) return a.score > b.score end)
-
-    for uid, item in pairs(eggItems) do
-        if not currentUids[uid] then
-            item.frame:Destroy()
-            eggItems[uid] = nil
-        end
-    end
-
-    for i, ovo in ipairs(ovosValidos) do
-        local uid = ovo.uid
-        if not eggItems[uid] or not eggItems[uid].frame.Parent then
-            eggItems[uid] = criarItemOvo()
-        end
-        local item = eggItems[uid]
-        item.frame.LayoutOrder = i
-
-        local nome = ovo.record.AssetCategory or ovo.record.Category or ovo.record.Name or "Ovo"
-        item.labelNome.Text = tostring(nome)
-        item.labelRarity.Text = ovo.rarityName
-        item.labelDist.Text = ovo.dist .. "m"
-
-        local rarCor = RARITY_COLOR[ovo.rarityName] or VERDE
-        item.labelRarity.TextColor3 = rarCor
-
-        local iconAsset = GetPetIcon(ovo.record)
-        if iconAsset then
-            if item.icon.Image ~= iconAsset then
-                item.icon.Image = iconAsset
-            end
-            item.icon.Visible = true
-        else
-            item.icon.Visible = false
-        end
-    end
-
-    lista.CanvasSize = UDim2.new(0, 0, 0, #ovosValidos * 40)
-end
-
-local niveisFiltroEye = {
-    "Todos","Common","Uncommon","Rare","Epic","Legendary",
-    "Mythic","Cosmic","Secret","Eternal","Divine"
-}
-local idxFiltroEye = 1
-
-btnEyeFiltro.MouseButton1Click:Connect(function()
-    idxFiltroEye = idxFiltroEye + 1
-    if idxFiltroEye > #niveisFiltroEye then idxFiltroEye = 1 end
-    targetRarityName = niveisFiltroEye[idxFiltroEye]
-    btnEyeFiltro.Text = "Filtro: " .. targetRarityName
-    limparListaOvos()
-    task.spawn(function() pcall(atualizarListaOvos) end)
-end)
-
-distInput.FocusLost:Connect(function()
-    local valor = tonumber(distInput.Text)
-    if valor and valor > 0 then
-        maxEspDistance = valor
-    else
-        distInput.Text = tostring(maxEspDistance)
-    end
-    limparListaOvos()
-    task.spawn(function() pcall(atualizarListaOvos) end)
-end)
-
-task.spawn(function()
-    while gui.Parent do
-        task.wait(0.1)
-        pcall(atualizarListaOvos)
     end
 end)
 
@@ -1674,15 +1350,14 @@ btnHopLista.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- SISTEMA DE ABAS
+-- SISTEMA DE ABAS (4 ABAS)
 -- ============================================
 local abaAtiva = 1
 local function atualizarAbas()
     containerFunc.Visible  = (abaAtiva == 1)
     containerTps.Visible   = (abaAtiva == 2)
     containerSpeed.Visible = (abaAtiva == 3)
-    containerEye.Visible   = (abaAtiva == 4)
-    containerHop.Visible   = (abaAtiva == 5)
+    containerHop.Visible   = (abaAtiva == 4)
 
     local function setCor(btn, ativo)
         if ativo then
@@ -1696,8 +1371,7 @@ local function atualizarAbas()
     setCor(btnTabFunc,  abaAtiva == 1)
     setCor(btnTabTps,   abaAtiva == 2)
     setCor(btnTabSpeed, abaAtiva == 3)
-    setCor(btnTabEye,   abaAtiva == 4)
-    setCor(btnTabHop,   abaAtiva == 5)
+    setCor(btnTabHop,   abaAtiva == 4)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -1716,13 +1390,8 @@ btnTabSpeed.MouseButton1Click:Connect(function()
     atualizarAbas()
 end)
 
-btnTabEye.MouseButton1Click:Connect(function()
-    abaAtiva = 4
-    atualizarAbas()
-end)
-
 btnTabHop.MouseButton1Click:Connect(function()
-    abaAtiva = 5
+    abaAtiva = 4
     atualizarAbas()
 end)
 
@@ -1839,6 +1508,11 @@ local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounce
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
     criarBotaoCyber(30, "🌌 TP-EGG", 7)
+
+-- 🤖 NOVO BOTÃO: AUTO-STEAL
+local btnAutoSteal, contAutoSteal, labelAutoSteal, setaAutoSteal,
+      barraAutoSteal, bordaAutoSteal, bounceAutoSteal =
+    criarBotaoCyber(30, "🤖 AUTO-STEAL", 8)
 
 -- ============================================
 -- PAINEL FLUTUANTE
@@ -2223,6 +1897,841 @@ local function togglePainelFlutuante()
     end
 end
 
+-- ============================================
+-- 🤖 PAINEL AUTO-STEAL (integrado)
+-- ============================================
+local AutoSteal = { gui = nil, aberto = false }
+
+local function criarAutoStealGui()
+    if AutoSteal.gui then return AutoSteal.gui end
+
+    -- configs locais (shadowing proposital para não conflitar com o PL HUB)
+    local LOOP_POSITION      = Vector3.new(615.8, 70.3, -394.2)
+    local VELOCIDADE_RUN     = 1e15
+    local DISTANCIA_CHEGADA  = 4
+    local RESPAWN_WAIT       = 1.5
+    local RESPAWN_TWEEN_TIME = 1.5
+
+    local TEMA = {
+        fundo      = Color3.fromRGB(15, 15, 20),
+        painel     = Color3.fromRGB(25, 25, 35),
+        destaque   = Color3.fromRGB(46, 204, 113),
+        texto      = Color3.fromRGB(240, 240, 245),
+        textoFraco = Color3.fromRGB(150, 150, 160),
+        borda      = Color3.fromRGB(45, 45, 60),
+        perigo     = Color3.fromRGB(231, 76, 60),
+    }
+
+    local maxEspDistance = 1000
+    local targetRarityName = "Todos"
+    local iconCache = {}
+    local rarityCache = {}
+
+    local function GetEggRarityInfo(egg)
+        if not egg then return "Common", 100 end
+        if egg.Rarity then
+            local r = egg.Rarity
+            local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
+            return name, RARITY_SCORE_MAP[name] or 100
+        end
+        local cat = egg.AssetCategory or egg.Category or egg.Name
+        if cat and AssetsData then
+            local aInfo = (AssetsData.Directory or AssetsData)[cat]
+            if aInfo and aInfo.Rarity then
+                local r = aInfo.Rarity
+                local name = type(r) == "table" and (r.DisplayName or r._id or r.Name) or tostring(r)
+                return name, RARITY_SCORE_MAP[name] or 100
+            end
+        end
+        local areaData = AreasData and (AreasData.Directory or AreasData) and (AreasData.Directory or AreasData)[egg.AreaId]
+        local rarity = areaData and areaData.Rarity
+        local rarityId = (type(rarity) == "table" and (rarity._id or rarity.DisplayName or rarity.Name)) or (type(rarity) == "string" and rarity) or "Common"
+        local rInfo = (RarityData and (RarityData.Rarities or RarityData) or {})[rarityId] or {}
+        local rarityDisplayName = (type(rInfo) == "table" and (rInfo.DisplayName or rInfo._id)) or (type(rarity) == "table" and rarity.DisplayName) or rarityId or "Common"
+        return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
+    end
+
+    local function GetPetIcon(record)
+        if not record then return nil end
+        local targetName = record.Pet or record.PetId or record.PetName or record.AssetCategory or record.Category
+        if targetName then
+            local c = iconCache[targetName]
+            if c ~= nil then return c end
+        end
+        local rawIcon = record.Icon or record.PetIcon or record.ImageAsset or record.TextureId
+        local result
+        if rawIcon then
+            result = (type(rawIcon) == "number" or not string.match(tostring(rawIcon), "://"))
+                and ("rbxassetid://" .. tostring(rawIcon)) or tostring(rawIcon)
+        elseif targetName then
+            if PetsData then
+                local pInfo = (PetsData.Directory or PetsData)[targetName]
+                if pInfo and (pInfo.Icon or pInfo.Image or pInfo.AssetId) then
+                    local img = pInfo.Icon or pInfo.Image or pInfo.AssetId
+                    result = (type(img) == "number" or not string.match(tostring(img), "://"))
+                        and ("rbxassetid://" .. tostring(img)) or tostring(img)
+                end
+            end
+            if not result and AssetsData then
+                local aInfo = (AssetsData.Directory or AssetsData)[targetName]
+                if aInfo and (aInfo.Icon or aInfo.Image or aInfo.AssetId) then
+                    local img = aInfo.Icon or aInfo.Image or aInfo.AssetId
+                    result = (type(img) == "number" or not string.match(tostring(img), "://"))
+                        and ("rbxassetid://" .. tostring(img)) or tostring(img)
+                end
+            end
+        end
+        if targetName then
+            iconCache[targetName] = result
+        end
+        return result
+    end
+
+    local SG = Instance.new("ScreenGui")
+    SG.Name = "AutoStealPanel"
+    SG.ResetOnSpawn = false
+    SG.IgnoreGuiInset = true
+    SG.DisplayOrder = 999999998
+    SG.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    SG.Enabled = false
+    SG.Parent = (gethui and gethui()) or PlayerGui
+
+    local Main = Instance.new("Frame")
+    Main.Size = UDim2.new(0, 200, 0, 220)
+    Main.Position = UDim2.new(0.5, -100, 0.5, -110)
+    Main.BackgroundColor3 = TEMA.fundo
+    Main.BorderSizePixel = 0
+    Main.Active = true
+    Main.Draggable = true
+    Main.ZIndex = 10
+    Main.Parent = SG
+
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 8)
+    MainCorner.Parent = Main
+
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = TEMA.borda
+    MainStroke.Thickness = 1
+    MainStroke.Parent = Main
+
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 30)
+    Header.BackgroundColor3 = TEMA.painel
+    Header.BorderSizePixel = 0
+    Header.Parent = Main
+
+    local HeaderCorner = Instance.new("UICorner")
+    HeaderCorner.CornerRadius = UDim.new(0, 8)
+    HeaderCorner.Parent = Header
+
+    local LinhaDecor = Instance.new("Frame")
+    LinhaDecor.Size = UDim2.new(0, 3, 0, 18)
+    LinhaDecor.Position = UDim2.new(0, 8, 0.5, -9)
+    LinhaDecor.BackgroundColor3 = TEMA.destaque
+    LinhaDecor.BorderSizePixel = 0
+    LinhaDecor.Parent = Header
+
+    local Logo = Instance.new("TextLabel")
+    Logo.Size = UDim2.new(1, -20, 1, 0)
+    Logo.Position = UDim2.new(0, 16, 0, 0)
+    Logo.BackgroundTransparency = 1
+    Logo.Text = "AUTO-STEAL"
+    Logo.TextColor3 = TEMA.texto
+    Logo.Font = Enum.Font.GothamBlack
+    Logo.TextSize = 11
+    Logo.TextXAlignment = Enum.TextXAlignment.Left
+    Logo.Parent = Header
+
+    local Content = Instance.new("Frame")
+    Content.Size = UDim2.new(1, -10, 1, -36)
+    Content.Position = UDim2.new(0, 5, 0, 32)
+    Content.BackgroundTransparency = 1
+    Content.Parent = Main
+
+    local niveisFiltro = { "Todos", "Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Cosmic", "Secret", "Eternal", "Divine" }
+    local idxFiltro = 1
+
+    local BtnFiltro = Instance.new("TextButton")
+    BtnFiltro.Size = UDim2.new(1, 0, 0, 24)
+    BtnFiltro.Position = UDim2.new(0, 0, 0, 0)
+    BtnFiltro.BackgroundColor3 = TEMA.painel
+    BtnFiltro.Text = "Filtro: Todos"
+    BtnFiltro.TextColor3 = TEMA.texto
+    BtnFiltro.Font = Enum.Font.GothamBold
+    BtnFiltro.TextSize = 10
+    BtnFiltro.Parent = Content
+    Instance.new("UICorner", BtnFiltro).CornerRadius = UDim.new(0, 5)
+
+    local DistInput = Instance.new("TextBox")
+    DistInput.Size = UDim2.new(1, 0, 0, 24)
+    DistInput.Position = UDim2.new(0, 0, 0, 28)
+    DistInput.BackgroundColor3 = TEMA.painel
+    DistInput.TextColor3 = TEMA.texto
+    DistInput.Font = Enum.Font.GothamBold
+    DistInput.TextSize = 11
+    DistInput.Text = tostring(maxEspDistance)
+    DistInput.PlaceholderText = "Distância máxima"
+    DistInput.Parent = Content
+    Instance.new("UICorner", DistInput).CornerRadius = UDim.new(0, 5)
+
+    local Lista = Instance.new("ScrollingFrame")
+    Lista.Size = UDim2.new(1, 0, 1, -120)
+    Lista.Position = UDim2.new(0, 0, 0, 56)
+    Lista.BackgroundTransparency = 1
+    Lista.BorderSizePixel = 0
+    Lista.ScrollBarThickness = 4
+    Lista.ScrollBarImageColor3 = TEMA.destaque
+    Lista.CanvasSize = UDim2.new(0, 0, 0, 0)
+    Lista.Parent = Content
+
+    local ListaLayout = Instance.new("UIListLayout")
+    ListaLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    ListaLayout.Padding = UDim.new(0, 4)
+    ListaLayout.Parent = Lista
+
+    local BtnCancelarLoop = Instance.new("TextButton")
+    BtnCancelarLoop.Size = UDim2.new(1, 0, 0, 28)
+    BtnCancelarLoop.Position = UDim2.new(0, 0, 1, -60)
+    BtnCancelarLoop.BackgroundColor3 = TEMA.perigo
+    BtnCancelarLoop.Text = "CANCELAR LOOP"
+    BtnCancelarLoop.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnCancelarLoop.Font = Enum.Font.GothamBlack
+    BtnCancelarLoop.TextSize = 12
+    BtnCancelarLoop.Visible = false
+    BtnCancelarLoop.Parent = Content
+    Instance.new("UICorner", BtnCancelarLoop).CornerRadius = UDim.new(0, 5)
+
+    local BtnSteal = Instance.new("TextButton")
+    BtnSteal.Size = UDim2.new(1, 0, 0, 28)
+    BtnSteal.Position = UDim2.new(0, 0, 1, -28)
+    BtnSteal.BackgroundColor3 = TEMA.destaque
+    BtnSteal.Text = "STEAL TOP"
+    BtnSteal.TextColor3 = Color3.fromRGB(255, 255, 255)
+    BtnSteal.Font = Enum.Font.GothamBlack
+    BtnSteal.TextSize = 12
+    BtnSteal.Parent = Content
+    Instance.new("UICorner", BtnSteal).CornerRadius = UDim.new(0, 5)
+
+    local _topTarget = nil
+    local stealActive = false
+    local stealBodyVel = nil
+
+    local loopActive = false
+    local loopConn = nil
+    local loopPos = nil
+    local tweenConn = nil
+    local lastDeathPos = nil
+
+    local function pararLoop()
+        loopActive = false
+        if loopConn then
+            loopConn:Disconnect()
+            loopConn = nil
+        end
+        BtnCancelarLoop.Visible = false
+    end
+
+    local function iniciarLoop(posicao)
+        loopActive = true
+        loopPos = posicao
+        BtnCancelarLoop.Visible = true
+        if loopConn then loopConn:Disconnect() end
+        loopConn = RunService.Heartbeat:Connect(function()
+            if not loopActive or not loopPos then return end
+            local c = LocalPlayer.Character
+            local h = c and c:FindFirstChild("HumanoidRootPart")
+            if not h then return end
+            h.Velocity = Vector3.zero
+            h.CFrame = CFrame.new(loopPos) * (h.CFrame - h.Position)
+        end)
+    end
+
+    local function teleportarDisfarcado(destino, callback)
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        if not hrp or not humanoid then
+            if callback then callback(false) end
+            return
+        end
+
+        local walkOrig = humanoid.WalkSpeed
+        local jumpOrig = humanoid.JumpPower
+        humanoid.WalkSpeed = 500
+        humanoid.JumpPower = 120
+
+        local done = false
+        local conn
+        conn = RunService.Heartbeat:Connect(function(dt)
+            if done then return end
+            local c = LocalPlayer.Character
+            local h = c and c:FindFirstChild("HumanoidRootPart")
+            if not h then
+                done = true
+                return
+            end
+
+            local origem = h.Position
+            local delta = destino - origem
+            local dist = delta.Magnitude
+
+            if dist <= DISTANCIA_CHEGADA then
+                h.CFrame = CFrame.new(destino) * (h.CFrame - h.Position)
+                h.Velocity = Vector3.zero
+                done = true
+                return
+            end
+
+            local direcao = delta.Unit
+            local passo = math.min(VELOCIDADE_RUN * dt, dist)
+            local novaPos = origem + direcao * passo
+
+            local dirH = Vector3.new(direcao.X, 0, direcao.Z)
+            local lookDir = dirH.Magnitude > 0.001 and dirH.Unit or Vector3.new(0, 0, 1)
+            h.CFrame = CFrame.lookAt(novaPos, novaPos + lookDir)
+            h.Velocity = Vector3.zero
+        end)
+
+        local t0 = tick()
+        while not done and (tick() - t0) < 5 do
+            RunService.Heartbeat:Wait()
+        end
+
+        if conn then conn:Disconnect() end
+
+        local c = LocalPlayer.Character
+        local h = c and c:FindFirstChildOfClass("Humanoid")
+        if h then
+            h.WalkSpeed = walkOrig
+            h.JumpPower = jumpOrig
+        end
+
+        if callback then callback(done) end
+    end
+
+    local function tweenPara(destino, duracao, callback)
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then
+            if callback then callback() end
+            return
+        end
+
+        if tweenConn then
+            tweenConn:Disconnect()
+            tweenConn = nil
+        end
+
+        local origem = hrp.Position
+        local delta = destino - origem
+        local dist = delta.Magnitude
+        if dist < 0.5 then
+            if callback then callback() end
+            return
+        end
+
+        local t0 = tick()
+        tweenConn = RunService.Heartbeat:Connect(function()
+            local c = LocalPlayer.Character
+            local h = c and c:FindFirstChild("HumanoidRootPart")
+            if not h then
+                if tweenConn then tweenConn:Disconnect(); tweenConn = nil end
+                if callback then callback() end
+                return
+            end
+
+            local elapsed = tick() - t0
+            local alpha = math.min(elapsed / duracao, 1)
+            local eased = alpha * alpha * (3 - 2 * alpha)
+
+            local novaPos = origem:Lerp(destino, eased)
+            local dirVec = destino - origem
+            local dirH = Vector3.new(dirVec.X, 0, dirVec.Z)
+            if dirH.Magnitude > 0.01 then
+                h.CFrame = CFrame.lookAt(novaPos, novaPos + dirH.Unit)
+            else
+                h.CFrame = CFrame.new(novaPos) * (h.CFrame - h.Position)
+            end
+            h.Velocity = Vector3.zero
+
+            if alpha >= 1 then
+                if tweenConn then tweenConn:Disconnect(); tweenConn = nil end
+                if callback then callback() end
+            end
+        end)
+    end
+
+    local framePool = {}
+    local activeItems = {}
+    local frameTemplate = nil
+
+    local function criarTemplate()
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -4, 0, 36)
+        frame.BackgroundColor3 = TEMA.painel
+        frame.BorderSizePixel = 0
+        frame.Visible = false
+
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 5)
+        corner.Parent = frame
+
+        local icon = Instance.new("ImageLabel")
+        icon.Size = UDim2.new(0, 28, 0, 28)
+        icon.Position = UDim2.new(0, 4, 0.5, -14)
+        icon.BackgroundTransparency = 1
+        icon.ScaleType = Enum.ScaleType.Fit
+        icon.Image = ""
+        icon.Parent = frame
+
+        local labelNome = Instance.new("TextLabel")
+        labelNome.Size = UDim2.new(1, -80, 0, 14)
+        labelNome.Position = UDim2.new(0, 36, 0, 3)
+        labelNome.BackgroundTransparency = 1
+        labelNome.TextColor3 = TEMA.texto
+        labelNome.Font = Enum.Font.GothamBold
+        labelNome.TextSize = 10
+        labelNome.TextXAlignment = Enum.TextXAlignment.Left
+        labelNome.TextTruncate = Enum.TextTruncate.AtEnd
+        labelNome.Parent = frame
+
+        local labelRarity = Instance.new("TextLabel")
+        labelRarity.Size = UDim2.new(1, -80, 0, 12)
+        labelRarity.Position = UDim2.new(0, 36, 0, 18)
+        labelRarity.BackgroundTransparency = 1
+        labelRarity.TextColor3 = TEMA.destaque
+        labelRarity.Font = Enum.Font.Gotham
+        labelRarity.TextSize = 9
+        labelRarity.TextXAlignment = Enum.TextXAlignment.Left
+        labelRarity.TextTruncate = Enum.TextTruncate.AtEnd
+        labelRarity.Parent = frame
+
+        local labelDist = Instance.new("TextLabel")
+        labelDist.Size = UDim2.new(0, 40, 1, 0)
+        labelDist.Position = UDim2.new(1, -42, 0, 0)
+        labelDist.BackgroundTransparency = 1
+        labelDist.TextColor3 = TEMA.textoFraco
+        labelDist.Font = Enum.Font.Gotham
+        labelDist.TextSize = 9
+        labelDist.TextXAlignment = Enum.TextXAlignment.Right
+        labelDist.Parent = frame
+
+        frameTemplate = {
+            frame = frame, icon = icon,
+            labelNome = labelNome, labelRarity = labelRarity, labelDist = labelDist,
+        }
+    end
+    criarTemplate()
+
+    local function obterFrame()
+        local item = table.remove(framePool)
+        if not item then
+            item = {
+                frame = frameTemplate.frame:Clone(),
+                icon = nil, labelNome = nil, labelRarity = nil, labelDist = nil,
+            }
+            item.icon = item.frame:FindFirstChildOfClass("ImageLabel")
+            local labels = {}
+            for _, c in ipairs(item.frame:GetChildren()) do
+                if c:IsA("TextLabel") then table.insert(labels, c) end
+            end
+            item.labelNome = labels[1]
+            item.labelRarity = labels[2]
+            item.labelDist = labels[3]
+        end
+        item._lastDist = -1
+        item._lastRarity = ""
+        item._lastIcon = ""
+        item._lastName = ""
+        item._lastOrder = -1
+        item.frame.Visible = true
+        item.frame.Parent = Lista
+        return item
+    end
+
+    local function devolverFrame(item)
+        item.frame.Visible = false
+        item.frame.Parent = nil
+        table.insert(framePool, item)
+    end
+
+    local ovosBuffer = {}
+    local bufferCount = 0
+    local currentUids = {}
+
+    local function atualizarLista()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        local myPos = hrp.Position
+
+        if not EggState or not EggState.ReadFieldEggs then return end
+        local ok, snapshot = pcall(EggState.ReadFieldEggs)
+        if not ok or not snapshot or not snapshot.Records then return end
+
+        for i = 1, bufferCount do ovosBuffer[i] = nil end
+        bufferCount = 0
+        for k in pairs(currentUids) do currentUids[k] = nil end
+
+        for _, record in ipairs(snapshot.Records) do
+            if record.State == "Slot" and record.BoundsCFrame then
+                local eggPos = record.BoundsCFrame.Position
+                local dx, dy, dz = eggPos.X - myPos.X, eggPos.Y - myPos.Y, eggPos.Z - myPos.Z
+                local distSq = dx*dx + dy*dy + dz*dz
+                if distSq <= maxEspDistance * maxEspDistance then
+                    local uid = record.Uid or tostring(record.BoundsCFrame)
+                    local rarityName, score
+                    local cached = rarityCache[uid]
+                    if cached then
+                        rarityName, score = cached.name, cached.score
+                    else
+                        rarityName, score = GetEggRarityInfo(record)
+                        rarityCache[uid] = { name = rarityName, score = score }
+                    end
+                    if targetRarityName == "Todos" or (rarityName:lower() == targetRarityName:lower()) then
+                        currentUids[uid] = true
+                        bufferCount = bufferCount + 1
+                        local entry = ovosBuffer[bufferCount]
+                        if not entry then
+                            entry = {}
+                            ovosBuffer[bufferCount] = entry
+                        end
+                        entry.uid = uid
+                        entry.record = record
+                        entry.rarityName = rarityName
+                        entry.dist = math.floor(math.sqrt(distSq) + 0.5)
+                        entry.score = score
+                    end
+                end
+            end
+        end
+
+        table.sort(ovosBuffer, function(a, b)
+            if not a then return false end
+            if not b then return true end
+            return a.score > b.score
+        end)
+        for i = #ovosBuffer, 1, -1 do
+            if ovosBuffer[i] == nil then table.remove(ovosBuffer, i) else break end
+        end
+
+        local top = ovosBuffer[1]
+        if top then
+            _topTarget = { uid = top.uid, record = top.record }
+        else
+            _topTarget = nil
+        end
+
+        for uid, item in pairs(activeItems) do
+            if not currentUids[uid] then
+                devolverFrame(item)
+                activeItems[uid] = nil
+            end
+        end
+
+        for i = 1, bufferCount do
+            local ovo = ovosBuffer[i]
+            if not ovo then break end
+            local uid = ovo.uid
+            local item = activeItems[uid]
+            if not item then
+                item = obterFrame()
+                activeItems[uid] = item
+            end
+
+            if item._lastOrder ~= i then
+                item.frame.LayoutOrder = i
+                item._lastOrder = i
+            end
+
+            local nome = ovo.record.AssetCategory or ovo.record.Category or ovo.record.Name or "Ovo"
+            nome = tostring(nome)
+            if item._lastName ~= nome then
+                item.labelNome.Text = nome
+                item._lastName = nome
+            end
+            if item._lastRarity ~= ovo.rarityName then
+                item.labelRarity.Text = ovo.rarityName
+                item._lastRarity = ovo.rarityName
+            end
+            if item._lastDist ~= ovo.dist then
+                item.labelDist.Text = ovo.dist .. "m"
+                item._lastDist = ovo.dist
+            end
+
+            local iconAsset = GetPetIcon(ovo.record)
+            if iconAsset then
+                if item._lastIcon ~= iconAsset then
+                    item.icon.Image = iconAsset
+                    item._lastIcon = iconAsset
+                end
+                if not item.icon.Visible then item.icon.Visible = true end
+            else
+                if item.icon.Visible then item.icon.Visible = false end
+            end
+        end
+
+        local canvasY = bufferCount * 40
+        if Lista.CanvasSize.Y.Offset ~= canvasY then
+            Lista.CanvasSize = UDim2.new(0, 0, 0, canvasY)
+        end
+    end
+
+    local function atualizarSeguro()
+        local ok, err = pcall(atualizarLista)
+        if not ok then warn("[Auto-Steal] " .. tostring(err)) end
+    end
+
+    BtnFiltro.MouseButton1Click:Connect(function()
+        idxFiltro = idxFiltro + 1
+        if idxFiltro > #niveisFiltro then idxFiltro = 1 end
+        targetRarityName = niveisFiltro[idxFiltro]
+        BtnFiltro.Text = "Filtro: " .. targetRarityName
+        for uid, item in pairs(activeItems) do
+            devolverFrame(item)
+        end
+        activeItems = {}
+        atualizarSeguro()
+    end)
+
+    DistInput.FocusLost:Connect(function()
+        local valor = tonumber(DistInput.Text)
+        if valor and valor > 0 then
+            maxEspDistance = valor
+        else
+            DistInput.Text = tostring(maxEspDistance)
+        end
+        for uid, item in pairs(activeItems) do
+            devolverFrame(item)
+        end
+        activeItems = {}
+        atualizarSeguro()
+    end)
+
+    local function pararSteal()
+        stealActive = false
+        if stealBodyVel then
+            stealBodyVel:Destroy()
+            stealBodyVel = nil
+        end
+        local c = LocalPlayer.Character
+        local h = c and c:FindFirstChild("HumanoidRootPart")
+        if h then h.Velocity = Vector3.zero end
+    end
+
+    local function acharPromptMaisProximo(refPos)
+        if not refPos then return nil end
+        local best, bestD = nil, math.huge
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("ProximityPrompt")
+                and obj.Name == "CarryAreaEgg"
+                and obj.Parent
+                and obj.Parent.Name == "SmartPromptPart"
+            then
+                local d = (obj.Parent.Position - refPos).Magnitude
+                if d < bestD then
+                    best, bestD = obj, d
+                end
+            end
+        end
+        return best
+    end
+
+    BtnCancelarLoop.MouseButton1Click:Connect(function()
+        pararLoop()
+    end)
+
+    BtnSteal.MouseButton1Click:Connect(function()
+        if stealActive then
+            pararSteal()
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            return
+        end
+
+        if loopActive then
+            pararLoop()
+        end
+
+        local alvo = _topTarget
+        if not alvo then
+            BtnSteal.Text = "SEM ALVO"
+            task.wait(1)
+            BtnSteal.Text = "STEAL TOP"
+            return
+        end
+
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+
+        stealActive = true
+        BtnSteal.Text = "PARAR (0m)"
+        BtnSteal.BackgroundColor3 = TEMA.perigo
+
+        stealBodyVel = Instance.new("BodyVelocity")
+        stealBodyVel.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        stealBodyVel.P = 1250
+        stealBodyVel.Velocity = Vector3.zero
+        stealBodyVel.Parent = hrp
+
+        local targetUid = alvo.uid
+        local targetPos = alvo.record.BoundsCFrame and alvo.record.BoundsCFrame.Position or nil
+        if not targetPos then
+            pararSteal()
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            return
+        end
+
+        while stealActive do
+            local c = LocalPlayer.Character
+            local h = c and c:FindFirstChild("HumanoidRootPart")
+            if not h or not stealBodyVel or not stealBodyVel.Parent then break end
+
+            local found = false
+            local ok, snap = pcall(EggState.ReadFieldEggs)
+            if ok and snap and snap.Records then
+                for _, rec in ipairs(snap.Records) do
+                    if rec.Uid == targetUid and rec.BoundsCFrame then
+                        targetPos = rec.BoundsCFrame.Position
+                        found = true
+                        break
+                    end
+                end
+            end
+            if not found then break end
+
+            local myPos = h.Position
+            local diff = targetPos - myPos
+            local horiz = Vector3.new(diff.X, 0, diff.Z)
+            local dist = horiz.Magnitude
+
+            BtnSteal.Text = string.format("PARAR (%dm)", math.floor(dist))
+            if dist < 1 then break end
+
+            local dir = horiz.Unit
+            local speed = dist < 6 and math.max(30, dist * 30) or 250
+            stealBodyVel.Velocity = Vector3.new(dir.X * speed, 0, dir.Z * speed)
+            RunService.Heartbeat:Wait()
+        end
+
+        if stealBodyVel then
+            stealBodyVel:Destroy()
+            stealBodyVel = nil
+        end
+        local h2 = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if h2 then h2.Velocity = Vector3.zero end
+
+        if not stealActive then
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            return
+        end
+
+        BtnSteal.Text = "SEGURANDO..."
+        local prompt = acharPromptMaisProximo(targetPos)
+        if prompt then
+            local done = false
+            local conn
+            conn = prompt.Triggered:Connect(function(plr)
+                if plr == LocalPlayer then done = true end
+            end)
+
+            pcall(function() prompt:InputHoldBegin() end)
+
+            local holdTime = prompt.HoldDuration or 1.2
+            local t0 = tick()
+            while not done and (tick() - t0) < (holdTime + 1.5) do
+                RunService.Heartbeat:Wait()
+            end
+
+            pcall(function() prompt:InputHoldEnd() end)
+            if conn then conn:Disconnect() end
+        end
+
+        BtnSteal.Text = "TELEPORTANDO..."
+        teleportarDisfarcado(LOOP_POSITION, function(sucesso)
+            if sucesso then
+                iniciarLoop(LOOP_POSITION)
+            end
+        end)
+
+        stealActive = false
+        BtnSteal.Text = "STEAL TOP"
+        BtnSteal.BackgroundColor3 = TEMA.destaque
+    end)
+
+    local function hookChar(char)
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Died:Connect(function()
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    lastDeathPos = hrp.Position
+                end
+            end)
+        end
+    end
+
+    if LocalPlayer.Character then
+        hookChar(LocalPlayer.Character)
+    end
+
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        hookChar(char)
+
+        if loopActive then
+            if loopConn then
+                loopConn:Disconnect()
+                loopConn = nil
+            end
+
+            local alvoRetorno = lastDeathPos or loopPos
+
+            task.wait(RESPAWN_WAIT)
+            if not loopActive then return end
+
+            local hrp = char:WaitForChild("HumanoidRootPart", 10)
+            if not hrp then return end
+
+            tweenPara(alvoRetorno, RESPAWN_TWEEN_TIME, function()
+                if loopActive and loopPos then
+                    iniciarLoop(loopPos)
+                end
+            end)
+        end
+    end)
+
+    RunService:BindToRenderStep("AutoSteal_Update", Enum.RenderPriority.Last.Value, atualizarSeguro)
+
+    task.spawn(function()
+        while AutoSteal.gui and AutoSteal.gui.Parent do
+            task.wait(0.1)
+            if AutoSteal.aberto then
+                atualizarSeguro()
+            end
+        end
+    end)
+
+    AutoSteal.gui = SG
+    return SG
+end
+
+local function toggleAutoSteal()
+    if not AutoSteal.gui then
+        criarAutoStealGui()
+    end
+    AutoSteal.aberto = not AutoSteal.aberto
+    AutoSteal.gui.Enabled = AutoSteal.aberto
+    if AutoSteal.aberto then
+        Toast("AUTO-STEAL ON", VERDE)
+    else
+        Toast("AUTO-STEAL OFF", AMARELO)
+    end
+end
+
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
 faixaBase.Size = UDim2.new(1, -16, 0, 2)
@@ -2270,7 +2779,7 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBarHolder, containerFunc, containerTps, containerSpeed, containerEye, containerHop, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBarHolder, containerFunc, containerTps, containerSpeed, containerHop, faixaBase, rodape }
 local minimizado = false
 local tamanhoNormal = UDim2.new(0, 200, 0, 220)
 local tamanhoMin    = UDim2.new(0, 200, 0, 36)
@@ -2329,6 +2838,11 @@ end)
 btnFlutuante.MouseButton1Click:Connect(function()
     bounceFlutuante()
     togglePainelFlutuante()
+end)
+
+btnAutoSteal.MouseButton1Click:Connect(function()
+    bounceAutoSteal()
+    toggleAutoSteal()
 end)
 
 btnTpArea2.MouseButton1Click:Connect(function()
@@ -2466,6 +2980,22 @@ task.spawn(function()
             labelFlutuante.TextColor3        = Color3.fromRGB(230, 220, 255)
             setaFlutuante.TextColor3         = ROXO
             labelFlutuante.Text              = "🌌 TP-EGG"
+        end
+
+        if AutoSteal.aberto then
+            contAutoSteal.BackgroundColor3   = Color3.fromRGB(20, 55, 28)
+            barraAutoSteal.BackgroundColor3  = VERDE
+            bordaAutoSteal.Color             = VERDE
+            labelAutoSteal.TextColor3        = Color3.fromRGB(180, 255, 200)
+            setaAutoSteal.TextColor3         = VERDE
+            labelAutoSteal.Text              = "🤖 AUTO-STEAL  [ON]"
+        else
+            contAutoSteal.BackgroundColor3   = BG_BTN
+            barraAutoSteal.BackgroundColor3  = ROXO
+            bordaAutoSteal.Color             = ROXO_DARK
+            labelAutoSteal.TextColor3        = Color3.fromRGB(230, 220, 255)
+            setaAutoSteal.TextColor3         = ROXO
+            labelAutoSteal.Text              = "🤖 AUTO-STEAL"
         end
 
         if AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
