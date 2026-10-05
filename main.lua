@@ -1893,7 +1893,7 @@ local function togglePainelFlutuante()
 end
 
 -- ============================================
--- 🤖 PAINEL AUTO-STEAL (com valor $ e mutações)
+-- 🤖 PAINEL AUTO-STEAL (com valor $ + ordenação por $)
 -- ============================================
 local AutoSteal = { gui = nil, aberto = false }
 
@@ -1904,9 +1904,10 @@ local function criarAutoStealGui()
     local LOOP_POSITION      = Vector3.new(615.8, 70.3, -394.2)
     local VELOCIDADE_RUN     = 1e15
     local DISTANCIA_CHEGADA  = 4
-    local RESPAWN_WAIT       = 1.5
+    local RESPAWN_WAIT       = 0.8
     local RESPAWN_TWEEN_TIME = 1.5
     local MOSTRAR_SUFIXO_S   = false
+    local ORDENAR_POR_VALOR  = true
 
     local TEMA = {
         fundo      = Color3.fromRGB(15, 15, 20),
@@ -2542,15 +2543,31 @@ local function criarAutoStealGui()
                         entry.rarityName = rarityName
                         entry.dist = math.floor(math.sqrt(distSq) + 0.5)
                         entry.score = score
+
+                        -- Calcula valor AQUI para poder ordenar por ele
+                        local vCached = valueCache[uid]
+                        if vCached == nil then
+                            local okv, v = pcall(getEggValue, record)
+                            vCached = (okv and v) or 0
+                            valueCache[uid] = vCached
+                        end
+                        entry.valor = vCached
                     end
                 end
             end
         end
 
+        -- Ordenação: por VALOR (padrão) ou por RARIDADE
         table.sort(ovosBuffer, function(a, b)
             if not a then return false end
             if not b then return true end
-            return a.score > b.score
+            if ORDENAR_POR_VALOR then
+                local va, vb = a.valor or 0, b.valor or 0
+                if va ~= vb then return va > vb end
+                return a.score > b.score
+            else
+                return a.score > b.score
+            end
         end)
         for i = #ovosBuffer, 1, -1 do
             if ovosBuffer[i] == nil then table.remove(ovosBuffer, i) else break end
@@ -2600,14 +2617,8 @@ local function criarAutoStealGui()
                 item._lastDist = ovo.dist
             end
 
-            -- ===== VALOR com mutações + cache =====
-            local valor = valueCache[uid]
-            if valor == nil then
-                local okv, v = pcall(getEggValue, ovo.record)
-                valor = (okv and v) or 0
-                valueCache[uid] = valor
-            end
-
+            -- ===== VALOR (já calculado antes do sort) =====
+            local valor = ovo.valor or 0
             local moneyText = formatarValor(valor) or "—"
             if item._lastMoney ~= moneyText then
                 item.labelMoney.Text = moneyText
