@@ -651,9 +651,7 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- ============================================
--- TabBar (com scroll horizontal) — 4 ABAS
--- ============================================
+-- TabBar (4 abas com scroll horizontal)
 local tabBarHolder = Instance.new("Frame")
 tabBarHolder.Size = UDim2.new(1, -16, 0, 22)
 tabBarHolder.Position = UDim2.new(0, 8, 0, 38)
@@ -769,7 +767,7 @@ padScroll.PaddingTop = UDim.new(0, 2)
 padScroll.PaddingBottom = UDim.new(0, 4)
 padScroll.Parent = scroll
 
--- Scroll Áreas (aba TPs)
+-- Scroll Áreas
 local statusAreaLbl = Instance.new("TextLabel")
 statusAreaLbl.Size = UDim2.new(1, -16, 0, 14)
 statusAreaLbl.Position = UDim2.new(0, 8, 0, 0)
@@ -809,7 +807,6 @@ padAreas.PaddingTop = UDim.new(0, 2)
 padAreas.PaddingBottom = UDim.new(0, 4)
 padAreas.Parent = scrollAreas
 
--- Botão TP-AREA
 local btnTpArea2 = Instance.new("TextButton")
 btnTpArea2.Size = UDim2.new(1, -16, 0, 28)
 btnTpArea2.Position = UDim2.new(0, 8, 1, -32)
@@ -823,7 +820,6 @@ btnTpArea2.ZIndex = 4
 btnTpArea2.Parent = containerTps
 Instance.new("UICorner", btnTpArea2).CornerRadius = UDim.new(0, 7)
 
--- Lista de áreas
 local AreaSelecionada = nil
 local areaButtons = {}
 
@@ -1509,13 +1505,12 @@ local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
     criarBotaoCyber(30, "🌌 TP-EGG", 7)
 
--- 🤖 NOVO BOTÃO: AUTO-STEAL
 local btnAutoSteal, contAutoSteal, labelAutoSteal, setaAutoSteal,
       barraAutoSteal, bordaAutoSteal, bounceAutoSteal =
     criarBotaoCyber(30, "🤖 AUTO-STEAL", 8)
 
 -- ============================================
--- PAINEL FLUTUANTE
+-- PAINEL FLUTUANTE (TP-EGG)
 -- ============================================
 local PainelFlutuante = { gui = nil, aberto = false }
 
@@ -1898,19 +1893,20 @@ local function togglePainelFlutuante()
 end
 
 -- ============================================
--- 🤖 PAINEL AUTO-STEAL (integrado)
+-- 🤖 PAINEL AUTO-STEAL (com valor $ e mutações)
 -- ============================================
 local AutoSteal = { gui = nil, aberto = false }
 
 local function criarAutoStealGui()
     if AutoSteal.gui then return AutoSteal.gui end
 
-    -- configs locais (shadowing proposital para não conflitar com o PL HUB)
+    -- configs locais
     local LOOP_POSITION      = Vector3.new(615.8, 70.3, -394.2)
     local VELOCIDADE_RUN     = 1e15
     local DISTANCIA_CHEGADA  = 4
     local RESPAWN_WAIT       = 1.5
     local RESPAWN_TWEEN_TIME = 1.5
+    local MOSTRAR_SUFIXO_S   = false
 
     local TEMA = {
         fundo      = Color3.fromRGB(15, 15, 20),
@@ -1920,12 +1916,64 @@ local function criarAutoStealGui()
         textoFraco = Color3.fromRGB(150, 150, 160),
         borda      = Color3.fromRGB(45, 45, 60),
         perigo     = Color3.fromRGB(231, 76, 60),
+        dinheiro   = Color3.fromRGB(255, 215, 0),
     }
 
     local maxEspDistance = 1000
     local targetRarityName = "Todos"
     local iconCache = {}
     local rarityCache = {}
+    local valueCache = {}
+
+    local RARITY_SCORE = {
+        Secret = 800, Cosmic = 700, Mythic = 600, Rainbow = 600,
+        Legendary = 500, Epic = 400, Rare = 300, Uncommon = 200, Common = 100,
+    }
+
+    local function getAssetInfo(category)
+        if not category or not AssetsData then return nil end
+        return (AssetsData.Directory or AssetsData)[category]
+    end
+
+    local function mutationMultiplier(record)
+        local multiplier = 1
+        local mutations = record.Mutations or record.Mutation
+
+        if type(mutations) == "table" then
+            for _, mutation in pairs(mutations) do
+                if type(mutation) == "table" then
+                    multiplier = multiplier * (
+                        tonumber(
+                            mutation.Multiplier
+                            or mutation.Value
+                            or mutation.Scale
+                        ) or 1.5
+                    )
+                else
+                    local text = tostring(mutation):lower()
+                    if text:find("rainbow") then
+                        multiplier = multiplier * 3
+                    elseif text:find("gold") then
+                        multiplier = multiplier * 2
+                    elseif text:find("silver") then
+                        multiplier = multiplier * 1.5
+                    elseif text:find("parasite") or text:find("monstrous") then
+                        multiplier = multiplier * 5
+                    else
+                        multiplier = multiplier * 1.25
+                    end
+                end
+            end
+        elseif mutations then
+            multiplier = multiplier * 1.5
+        end
+
+        if record.HasParasite then
+            multiplier = multiplier * 5
+        end
+
+        return multiplier
+    end
 
     local function GetEggRarityInfo(egg)
         if not egg then return "Common", 100 end
@@ -1949,6 +1997,83 @@ local function criarAutoStealGui()
         local rInfo = (RarityData and (RarityData.Rarities or RarityData) or {})[rarityId] or {}
         local rarityDisplayName = (type(rInfo) == "table" and (rInfo.DisplayName or rInfo._id)) or (type(rarity) == "table" and rarity.DisplayName) or rarityId or "Common"
         return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
+    end
+
+    local function getRarityName(record)
+        return (GetEggRarityInfo(record))
+    end
+
+    local function getEggValue(record)
+        if not record then return 0 end
+
+        local category = tostring(
+            record.AssetCategory
+            or record.Category
+            or record.Name
+            or "Egg"
+        )
+
+        local info = getAssetInfo(category)
+
+        local raw = tonumber(
+            record.Money
+            or record.Cash
+            or record.Income
+            or record.EarningRate
+            or record.Value
+            or record.Price
+        )
+
+        if (not raw or raw <= 0) and type(info) == "table" then
+            raw = tonumber(
+                info.Money
+                or info.Cash
+                or info.Income
+                or info.EarningRate
+                or info.ProfileIncome
+                or info.SalePrice
+                or info.Price
+            )
+
+            if (not raw or raw <= 0) and type(info.Egg) == "table" then
+                raw = tonumber(
+                    info.Egg.Money
+                    or info.Egg.Income
+                    or info.Egg.EarningRate
+                    or info.Egg.SalePrice
+                )
+            end
+        end
+
+        raw = tonumber(raw) or 0
+
+        local scale = tonumber(
+            record.AssetScale
+            or record.Scale
+            or record.NestScale
+        ) or 1
+
+        local value = raw * scale * mutationMultiplier(record)
+
+        if value <= 0 then
+            local rarity = getRarityName(record)
+            local score = RARITY_SCORE[rarity] or 100
+            local area = tonumber(tostring(record.AreaId or ""):match("%d+")) or 50
+            value = score * math.max(area, 50) * math.max(scale, 1)
+        end
+
+        return value
+    end
+
+    local function formatarValor(n)
+        if not n or n <= 0 then return nil end
+        n = tonumber(n) or 0
+        local sufixo = MOSTRAR_SUFIXO_S and "/s" or ""
+        if n >= 1e12 then return string.format("$%.1fT%s", n/1e12, sufixo) end
+        if n >= 1e9  then return string.format("$%.1fB%s", n/1e9,  sufixo) end
+        if n >= 1e6  then return string.format("$%.1fM%s", n/1e6,  sufixo) end
+        if n >= 1e3  then return string.format("$%.1fK%s", n/1e3,  sufixo) end
+        return string.format("$%d%s", math.floor(n + 0.5), sufixo)
     end
 
     local function GetPetIcon(record)
@@ -2278,6 +2403,7 @@ local function criarAutoStealGui()
         corner.Parent = frame
 
         local icon = Instance.new("ImageLabel")
+        icon.Name = "Icon"
         icon.Size = UDim2.new(0, 28, 0, 28)
         icon.Position = UDim2.new(0, 4, 0.5, -14)
         icon.BackgroundTransparency = 1
@@ -2286,7 +2412,8 @@ local function criarAutoStealGui()
         icon.Parent = frame
 
         local labelNome = Instance.new("TextLabel")
-        labelNome.Size = UDim2.new(1, -80, 0, 14)
+        labelNome.Name = "Nome"
+        labelNome.Size = UDim2.new(1, -106, 0, 14)
         labelNome.Position = UDim2.new(0, 36, 0, 3)
         labelNome.BackgroundTransparency = 1
         labelNome.TextColor3 = TEMA.texto
@@ -2296,8 +2423,21 @@ local function criarAutoStealGui()
         labelNome.TextTruncate = Enum.TextTruncate.AtEnd
         labelNome.Parent = frame
 
+        local labelMoney = Instance.new("TextLabel")
+        labelMoney.Name = "Money"
+        labelMoney.Size = UDim2.new(0, 68, 0, 14)
+        labelMoney.Position = UDim2.new(1, -72, 0, 3)
+        labelMoney.BackgroundTransparency = 1
+        labelMoney.TextColor3 = TEMA.dinheiro
+        labelMoney.Font = Enum.Font.GothamBold
+        labelMoney.TextSize = 9
+        labelMoney.TextXAlignment = Enum.TextXAlignment.Right
+        labelMoney.Text = ""
+        labelMoney.Parent = frame
+
         local labelRarity = Instance.new("TextLabel")
-        labelRarity.Size = UDim2.new(1, -80, 0, 12)
+        labelRarity.Name = "Rarity"
+        labelRarity.Size = UDim2.new(1, -90, 0, 12)
         labelRarity.Position = UDim2.new(0, 36, 0, 18)
         labelRarity.BackgroundTransparency = 1
         labelRarity.TextColor3 = TEMA.destaque
@@ -2308,8 +2448,9 @@ local function criarAutoStealGui()
         labelRarity.Parent = frame
 
         local labelDist = Instance.new("TextLabel")
-        labelDist.Size = UDim2.new(0, 40, 1, 0)
-        labelDist.Position = UDim2.new(1, -42, 0, 0)
+        labelDist.Name = "Dist"
+        labelDist.Size = UDim2.new(0, 44, 0, 12)
+        labelDist.Position = UDim2.new(1, -48, 0, 18)
         labelDist.BackgroundTransparency = 1
         labelDist.TextColor3 = TEMA.textoFraco
         labelDist.Font = Enum.Font.Gotham
@@ -2319,7 +2460,8 @@ local function criarAutoStealGui()
 
         frameTemplate = {
             frame = frame, icon = icon,
-            labelNome = labelNome, labelRarity = labelRarity, labelDist = labelDist,
+            labelNome = labelNome, labelRarity = labelRarity,
+            labelDist = labelDist, labelMoney = labelMoney,
         }
     end
     criarTemplate()
@@ -2327,23 +2469,21 @@ local function criarAutoStealGui()
     local function obterFrame()
         local item = table.remove(framePool)
         if not item then
+            local frameClone = frameTemplate.frame:Clone()
             item = {
-                frame = frameTemplate.frame:Clone(),
-                icon = nil, labelNome = nil, labelRarity = nil, labelDist = nil,
+                frame = frameClone,
+                icon = frameClone:FindFirstChild("Icon"),
+                labelNome = frameClone:FindFirstChild("Nome"),
+                labelRarity = frameClone:FindFirstChild("Rarity"),
+                labelDist = frameClone:FindFirstChild("Dist"),
+                labelMoney = frameClone:FindFirstChild("Money"),
             }
-            item.icon = item.frame:FindFirstChildOfClass("ImageLabel")
-            local labels = {}
-            for _, c in ipairs(item.frame:GetChildren()) do
-                if c:IsA("TextLabel") then table.insert(labels, c) end
-            end
-            item.labelNome = labels[1]
-            item.labelRarity = labels[2]
-            item.labelDist = labels[3]
         end
         item._lastDist = -1
         item._lastRarity = ""
         item._lastIcon = ""
         item._lastName = ""
+        item._lastMoney = "\0"
         item._lastOrder = -1
         item.frame.Visible = true
         item.frame.Parent = Lista
@@ -2460,6 +2600,20 @@ local function criarAutoStealGui()
                 item._lastDist = ovo.dist
             end
 
+            -- ===== VALOR com mutações + cache =====
+            local valor = valueCache[uid]
+            if valor == nil then
+                local okv, v = pcall(getEggValue, ovo.record)
+                valor = (okv and v) or 0
+                valueCache[uid] = valor
+            end
+
+            local moneyText = formatarValor(valor) or "—"
+            if item._lastMoney ~= moneyText then
+                item.labelMoney.Text = moneyText
+                item._lastMoney = moneyText
+            end
+
             local iconAsset = GetPetIcon(ovo.record)
             if iconAsset then
                 if item._lastIcon ~= iconAsset then
@@ -2469,6 +2623,12 @@ local function criarAutoStealGui()
                 if not item.icon.Visible then item.icon.Visible = true end
             else
                 if item.icon.Visible then item.icon.Visible = false end
+            end
+        end
+
+        for uid in pairs(valueCache) do
+            if not currentUids[uid] then
+                valueCache[uid] = nil
             end
         end
 
