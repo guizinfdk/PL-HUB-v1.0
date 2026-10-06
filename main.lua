@@ -1893,21 +1893,28 @@ local function togglePainelFlutuante()
 end
 
 -- ============================================
--- 🤖 PAINEL AUTO-STEAL (com valor $ + ordenação por $)
+-- 🤖 PAINEL AUTO-STEAL (com Auto-Drop + Retorno ao Spawn)
 -- ============================================
 local AutoSteal = { gui = nil, aberto = false }
 
 local function criarAutoStealGui()
     if AutoSteal.gui then return AutoSteal.gui end
 
-    -- configs locais
-    local LOOP_POSITION      = Vector3.new(615.8, 70.3, -394.2)
-    local VELOCIDADE_RUN     = 1e15
-    local DISTANCIA_CHEGADA  = 4
-    local RESPAWN_WAIT       = 0.8
-    local RESPAWN_TWEEN_TIME = 1.5
-    local MOSTRAR_SUFIXO_S   = false
-    local ORDENAR_POR_VALOR  = true
+    -- ===== CONFIGS =====
+    local LOOP_POSITION       = Vector3.new(615.8, 70.3, -394.2)
+    local VELOCIDADE_RUN      = 1e15
+    local DISTANCIA_CHEGADA   = 4
+    local RESPAWN_WAIT        = 0.8
+    local RESPAWN_TWEEN_TIME  = 1.5
+    local MOSTRAR_SUFIXO_S    = false
+    local ORDENAR_POR_VALOR   = true
+
+    -- Fluxo do steal
+    local AUTO_DROP_TIMEOUT      = 8
+    local TIMEOUT_RETORNO        = 120
+    local HOLD_DURATION_RETORNO  = 1.2
+    local WAIT_LOOP_ANTES_DROP   = 1
+    local WAIT_APOS_DROP         = 1
 
     local TEMA = {
         fundo      = Color3.fromRGB(15, 15, 20),
@@ -1939,40 +1946,23 @@ local function criarAutoStealGui()
     local function mutationMultiplier(record)
         local multiplier = 1
         local mutations = record.Mutations or record.Mutation
-
         if type(mutations) == "table" then
             for _, mutation in pairs(mutations) do
                 if type(mutation) == "table" then
-                    multiplier = multiplier * (
-                        tonumber(
-                            mutation.Multiplier
-                            or mutation.Value
-                            or mutation.Scale
-                        ) or 1.5
-                    )
+                    multiplier = multiplier * (tonumber(mutation.Multiplier or mutation.Value or mutation.Scale) or 1.5)
                 else
                     local text = tostring(mutation):lower()
-                    if text:find("rainbow") then
-                        multiplier = multiplier * 3
-                    elseif text:find("gold") then
-                        multiplier = multiplier * 2
-                    elseif text:find("silver") then
-                        multiplier = multiplier * 1.5
-                    elseif text:find("parasite") or text:find("monstrous") then
-                        multiplier = multiplier * 5
-                    else
-                        multiplier = multiplier * 1.25
-                    end
+                    if text:find("rainbow") then multiplier = multiplier * 3
+                    elseif text:find("gold") then multiplier = multiplier * 2
+                    elseif text:find("silver") then multiplier = multiplier * 1.5
+                    elseif text:find("parasite") or text:find("monstrous") then multiplier = multiplier * 5
+                    else multiplier = multiplier * 1.25 end
                 end
             end
         elseif mutations then
             multiplier = multiplier * 1.5
         end
-
-        if record.HasParasite then
-            multiplier = multiplier * 5
-        end
-
+        if record.HasParasite then multiplier = multiplier * 5 end
         return multiplier
     end
 
@@ -2000,69 +1990,28 @@ local function criarAutoStealGui()
         return rarityDisplayName, RARITY_SCORE_MAP[rarityDisplayName] or 100
     end
 
-    local function getRarityName(record)
-        return (GetEggRarityInfo(record))
-    end
+    local function getRarityName(record) return (GetEggRarityInfo(record)) end
 
     local function getEggValue(record)
         if not record then return 0 end
-
-        local category = tostring(
-            record.AssetCategory
-            or record.Category
-            or record.Name
-            or "Egg"
-        )
-
+        local category = tostring(record.AssetCategory or record.Category or record.Name or "Egg")
         local info = getAssetInfo(category)
-
-        local raw = tonumber(
-            record.Money
-            or record.Cash
-            or record.Income
-            or record.EarningRate
-            or record.Value
-            or record.Price
-        )
-
+        local raw = tonumber(record.Money or record.Cash or record.Income or record.EarningRate or record.Value or record.Price)
         if (not raw or raw <= 0) and type(info) == "table" then
-            raw = tonumber(
-                info.Money
-                or info.Cash
-                or info.Income
-                or info.EarningRate
-                or info.ProfileIncome
-                or info.SalePrice
-                or info.Price
-            )
-
+            raw = tonumber(info.Money or info.Cash or info.Income or info.EarningRate or info.ProfileIncome or info.SalePrice or info.Price)
             if (not raw or raw <= 0) and type(info.Egg) == "table" then
-                raw = tonumber(
-                    info.Egg.Money
-                    or info.Egg.Income
-                    or info.Egg.EarningRate
-                    or info.Egg.SalePrice
-                )
+                raw = tonumber(info.Egg.Money or info.Egg.Income or info.Egg.EarningRate or info.Egg.SalePrice)
             end
         end
-
         raw = tonumber(raw) or 0
-
-        local scale = tonumber(
-            record.AssetScale
-            or record.Scale
-            or record.NestScale
-        ) or 1
-
+        local scale = tonumber(record.AssetScale or record.Scale or record.NestScale) or 1
         local value = raw * scale * mutationMultiplier(record)
-
         if value <= 0 then
             local rarity = getRarityName(record)
             local score = RARITY_SCORE[rarity] or 100
             local area = tonumber(tostring(record.AreaId or ""):match("%d+")) or 50
             value = score * math.max(area, 50) * math.max(scale, 1)
         end
-
         return value
     end
 
@@ -2107,9 +2056,7 @@ local function criarAutoStealGui()
                 end
             end
         end
-        if targetName then
-            iconCache[targetName] = result
-        end
+        if targetName then iconCache[targetName] = result end
         return result
     end
 
@@ -2239,6 +2186,7 @@ local function criarAutoStealGui()
     BtnSteal.Parent = Content
     Instance.new("UICorner", BtnSteal).CornerRadius = UDim.new(0, 5)
 
+    -- ===== ESTADOS =====
     local _topTarget = nil
     local stealActive = false
     local stealBodyVel = nil
@@ -2248,6 +2196,49 @@ local function criarAutoStealGui()
     local loopPos = nil
     local tweenConn = nil
     local lastDeathPos = nil
+
+    -- ===== SPAWN (pega do Workspace) =====
+    local SPAWN_POSITION = nil
+
+    local function acharSpawnNoWorkspace()
+        local candidatos = {
+            "Spawn", "Spawns", "SpawnLocation", "SpawnPart",
+            "SpawnArea", "BaseSpawn", "HomeSpawn", "PlayerSpawn",
+        }
+        for _, nome in ipairs(candidatos) do
+            local obj = workspace:FindFirstChild(nome)
+            if obj then
+                if obj:IsA("BasePart") then
+                    return obj.Position
+                elseif obj:IsA("Model") then
+                    local root = obj.PrimaryPart or obj:FindFirstChildWhichIsA("BasePart")
+                    if root then return root.Position end
+                elseif obj:IsA("Folder") then
+                    local part = obj:FindFirstChildWhichIsA("BasePart", true)
+                    if part then return part.Position end
+                end
+            end
+        end
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("SpawnLocation") then
+                return obj.Position
+            end
+        end
+        return nil
+    end
+
+    task.spawn(function()
+        local t0 = tick()
+        while not SPAWN_POSITION and (tick() - t0) < 5 do
+            SPAWN_POSITION = acharSpawnNoWorkspace()
+            if not SPAWN_POSITION then task.wait(0.3) end
+        end
+        if SPAWN_POSITION then
+            print("[Auto-Steal] Spawn encontrado em:", SPAWN_POSITION)
+        else
+            warn("[Auto-Steal] Spawn não encontrado (vai re-tentar no respawn)")
+        end
+    end)
 
     local function pararLoop()
         loopActive = false
@@ -2293,10 +2284,7 @@ local function criarAutoStealGui()
             if done then return end
             local c = LocalPlayer.Character
             local h = c and c:FindFirstChild("HumanoidRootPart")
-            if not h then
-                done = true
-                return
-            end
+            if not h then done = true; return end
 
             local origem = h.Position
             local delta = destino - origem
@@ -2323,7 +2311,6 @@ local function criarAutoStealGui()
         while not done and (tick() - t0) < 5 do
             RunService.Heartbeat:Wait()
         end
-
         if conn then conn:Disconnect() end
 
         local c = LocalPlayer.Character
@@ -2343,16 +2330,11 @@ local function criarAutoStealGui()
             if callback then callback() end
             return
         end
-
-        if tweenConn then
-            tweenConn:Disconnect()
-            tweenConn = nil
-        end
+        if tweenConn then tweenConn:Disconnect(); tweenConn = nil end
 
         local origem = hrp.Position
         local delta = destino - origem
-        local dist = delta.Magnitude
-        if dist < 0.5 then
+        if delta.Magnitude < 0.5 then
             if callback then callback() end
             return
         end
@@ -2366,11 +2348,9 @@ local function criarAutoStealGui()
                 if callback then callback() end
                 return
             end
-
             local elapsed = tick() - t0
             local alpha = math.min(elapsed / duracao, 1)
             local eased = alpha * alpha * (3 - 2 * alpha)
-
             local novaPos = origem:Lerp(destino, eased)
             local dirVec = destino - origem
             local dirH = Vector3.new(dirVec.X, 0, dirVec.Z)
@@ -2380,7 +2360,6 @@ local function criarAutoStealGui()
                 h.CFrame = CFrame.new(novaPos) * (h.CFrame - h.Position)
             end
             h.Velocity = Vector3.zero
-
             if alpha >= 1 then
                 if tweenConn then tweenConn:Disconnect(); tweenConn = nil end
                 if callback then callback() end
@@ -2388,6 +2367,58 @@ local function criarAutoStealGui()
         end)
     end
 
+    -- ===== ANDAR NORMAL =====
+    local function walkNormalTo(destino, callback)
+        local char = LocalPlayer.Character
+        local humanoid = char and char:FindFirstChildOfClass("Humanoid")
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not hrp then
+            if callback then callback(false) end
+            return
+        end
+
+        humanoid:MoveTo(destino)
+
+        local done = false
+        local t0 = tick()
+        local conn
+
+        conn = humanoid.MoveToFinished:Connect(function(reached)
+            if done then return end
+            done = true
+            if conn then conn:Disconnect() end
+            if callback then callback(reached) end
+        end)
+
+        task.spawn(function()
+            while not done and (tick() - t0) < TIMEOUT_RETORNO do
+                task.wait(0.2)
+                local c = LocalPlayer.Character
+                local h = c and c:FindFirstChild("HumanoidRootPart")
+                if not h then break end
+                local horiz = Vector3.new(destino.X - h.Position.X, 0, destino.Z - h.Position.Z)
+                if horiz.Magnitude < 5 then
+                    if not done then
+                        done = true
+                        if conn then conn:Disconnect() end
+                        if callback then callback(true) end
+                    end
+                    return
+                end
+                humanoid:MoveTo(destino)
+            end
+            if not done then
+                done = true
+                if conn then conn:Disconnect() end
+                local c = LocalPlayer.Character
+                local h = c and c:FindFirstChild("HumanoidRootPart")
+                if h then humanoid:MoveTo(h.Position) end
+                if callback then callback(false) end
+            end
+        end)
+    end
+
+    -- ===== POOL / LISTA =====
     local framePool = {}
     local activeItems = {}
     local frameTemplate = nil
@@ -2544,7 +2575,6 @@ local function criarAutoStealGui()
                         entry.dist = math.floor(math.sqrt(distSq) + 0.5)
                         entry.score = score
 
-                        -- Calcula valor AQUI para poder ordenar por ele
                         local vCached = valueCache[uid]
                         if vCached == nil then
                             local okv, v = pcall(getEggValue, record)
@@ -2557,7 +2587,6 @@ local function criarAutoStealGui()
             end
         end
 
-        -- Ordenação: por VALOR (padrão) ou por RARIDADE
         table.sort(ovosBuffer, function(a, b)
             if not a then return false end
             if not b then return true end
@@ -2617,7 +2646,6 @@ local function criarAutoStealGui()
                 item._lastDist = ovo.dist
             end
 
-            -- ===== VALOR (já calculado antes do sort) =====
             local valor = ovo.valor or 0
             local moneyText = formatarValor(valor) or "—"
             if item._lastMoney ~= moneyText then
@@ -2638,9 +2666,7 @@ local function criarAutoStealGui()
         end
 
         for uid in pairs(valueCache) do
-            if not currentUids[uid] then
-                valueCache[uid] = nil
-            end
+            if not currentUids[uid] then valueCache[uid] = nil end
         end
 
         local canvasY = bufferCount * 40
@@ -2659,27 +2685,21 @@ local function criarAutoStealGui()
         if idxFiltro > #niveisFiltro then idxFiltro = 1 end
         targetRarityName = niveisFiltro[idxFiltro]
         BtnFiltro.Text = "Filtro: " .. targetRarityName
-        for uid, item in pairs(activeItems) do
-            devolverFrame(item)
-        end
+        for uid, item in pairs(activeItems) do devolverFrame(item) end
         activeItems = {}
         atualizarSeguro()
     end)
 
     DistInput.FocusLost:Connect(function()
         local valor = tonumber(DistInput.Text)
-        if valor and valor > 0 then
-            maxEspDistance = valor
-        else
-            DistInput.Text = tostring(maxEspDistance)
-        end
-        for uid, item in pairs(activeItems) do
-            devolverFrame(item)
-        end
+        if valor and valor > 0 then maxEspDistance = valor
+        else DistInput.Text = tostring(maxEspDistance) end
+        for uid, item in pairs(activeItems) do devolverFrame(item) end
         activeItems = {}
         atualizarSeguro()
     end)
 
+    -- ===== STEAL =====
     local function pararSteal()
         stealActive = false
         if stealBodyVel then
@@ -2701,9 +2721,7 @@ local function criarAutoStealGui()
                 and obj.Parent.Name == "SmartPromptPart"
             then
                 local d = (obj.Parent.Position - refPos).Magnitude
-                if d < bestD then
-                    best, bestD = obj, d
-                end
+                if d < bestD then best, bestD = obj, d end
             end
         end
         return best
@@ -2713,6 +2731,68 @@ local function criarAutoStealGui()
         pararLoop()
     end)
 
+    -- ===== AUTO DROP =====
+    local function tentarDrop()
+        local pg = LocalPlayer:FindFirstChild("PlayerGui")
+        if not pg then return false end
+        local dropGui = pg:FindFirstChild("DropHeldEgg")
+        if not dropGui or not dropGui.Enabled then return false end
+        local btn = dropGui:FindFirstChild("Button")
+        if not btn then return false end
+
+        btn.Active = true
+        btn.Selectable = true
+
+        if firesignal then
+            pcall(function() firesignal(btn.Activated) end)
+            return true
+        end
+        if mousemoveabs and mouse1click then
+            local pos = btn.AbsolutePosition + btn.AbsoluteSize / 2
+            mousemoveabs(pos.X, pos.Y)
+            task.wait(0.03)
+            mouse1click()
+            return true
+        end
+        local ok = pcall(function()
+            local RS = game:GetService("ReplicatedStorage")
+            local ctrl = require(RS.Controllers.GUI.AreaEggDropGuiController)
+            if type(ctrl.DropFieldEgg) == "function" then
+                ctrl:DropFieldEgg()
+            end
+        end)
+        return ok
+    end
+
+    local function esperarEDropar(timeout)
+        timeout = timeout or AUTO_DROP_TIMEOUT
+        local t0 = tick()
+        local tentativas = 0
+        while (tick() - t0) < timeout do
+            local pg = LocalPlayer:FindFirstChild("PlayerGui")
+            local dropGui = pg and pg:FindFirstChild("DropHeldEgg")
+            if dropGui and dropGui.Enabled then
+                if tentarDrop() then
+                    tentativas = tentativas + 1
+                    task.wait(0.15)
+                    local still = pg:FindFirstChild("DropHeldEgg")
+                    if not still or not still.Enabled then
+                        return true
+                    end
+                    if tentativas >= 3 then
+                        return true
+                    end
+                else
+                    task.wait(0.1)
+                end
+            else
+                task.wait(0.1)
+            end
+        end
+        return false
+    end
+
+    -- ===== BOTÃO PRINCIPAL: STEAL TOP =====
     BtnSteal.MouseButton1Click:Connect(function()
         if stealActive then
             pararSteal()
@@ -2721,9 +2801,7 @@ local function criarAutoStealGui()
             return
         end
 
-        if loopActive then
-            pararLoop()
-        end
+        if loopActive then pararLoop() end
 
         local alvo = _topTarget
         if not alvo then
@@ -2756,6 +2834,7 @@ local function criarAutoStealGui()
             return
         end
 
+        -- ===== FASE 1: aproximar =====
         while stealActive do
             local c = LocalPlayer.Character
             local h = c and c:FindFirstChild("HumanoidRootPart")
@@ -2801,6 +2880,7 @@ local function criarAutoStealGui()
             return
         end
 
+        -- ===== FASE 2: segurar prompt (pegar o ovo) =====
         BtnSteal.Text = "SEGURANDO..."
         local prompt = acharPromptMaisProximo(targetPos)
         if prompt then
@@ -2809,64 +2889,136 @@ local function criarAutoStealGui()
             conn = prompt.Triggered:Connect(function(plr)
                 if plr == LocalPlayer then done = true end
             end)
-
             pcall(function() prompt:InputHoldBegin() end)
-
             local holdTime = prompt.HoldDuration or 1.2
             local t0 = tick()
             while not done and (tick() - t0) < (holdTime + 1.5) do
                 RunService.Heartbeat:Wait()
             end
-
             pcall(function() prompt:InputHoldEnd() end)
             if conn then conn:Disconnect() end
         end
 
+        -- ===== FASE 3: TP disfarçado até LOOP_POSITION =====
         BtnSteal.Text = "TELEPORTANDO..."
+        local tpOk = false
         teleportarDisfarcado(LOOP_POSITION, function(sucesso)
+            tpOk = sucesso
             if sucesso then
                 iniciarLoop(LOOP_POSITION)
             end
         end)
 
-        stealActive = false
-        BtnSteal.Text = "STEAL TOP"
+        if not tpOk then
+            stealActive = false
+            BtnSteal.Text = "FALHA NO TP"
+            task.wait(1.5)
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            return
+        end
+
+        -- ===== FASE 4: LOOP por 1s → AUTO DROP =====
+        BtnSteal.Text = "LOOPANDO..."
+        task.wait(WAIT_LOOP_ANTES_DROP)
+
+        BtnSteal.Text = "DROPANDO..."
+        local dropOk = esperarEDropar(AUTO_DROP_TIMEOUT)
+        if not dropOk then
+            pararLoop()
+            stealActive = false
+            BtnSteal.Text = "FALHA DROP"
+            task.wait(2)
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            return
+        end
+
+        pararLoop()
+        BtnSteal.Text = "✅ SUCESSO!"
         BtnSteal.BackgroundColor3 = TEMA.destaque
+        print("[AutoSteal] ✅ Egg dropado com sucesso!")
+
+        -- ===== FASE 5: espera 1s → segura prompt próximo =====
+        task.wait(WAIT_APOS_DROP)
+
+        local c = LocalPlayer.Character
+        local h = c and c:FindFirstChild("HumanoidRootPart")
+        if not h then
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+            stealActive = false
+            return
+        end
+
+        local promptRetorno = acharPromptMaisProximo(h.Position)
+        if promptRetorno then
+            BtnSteal.Text = "SEGURANDO VOLTA..."
+            pcall(function() promptRetorno:InputHoldBegin() end)
+            task.wait(promptRetorno.HoldDuration or HOLD_DURATION_RETORNO)
+            pcall(function() promptRetorno:InputHoldEnd() end)
+        end
+
+        -- ===== FASE 6: andar normal até o spawn =====
+        BtnSteal.Text = "VOLTANDO..."
+        if not SPAWN_POSITION then
+            SPAWN_POSITION = acharSpawnNoWorkspace()
+        end
+        local destino = SPAWN_POSITION
+
+        if destino then
+            walkNormalTo(destino, function(chegou)
+                BtnSteal.Text = chegou and "CHEGOU!" or "TIMEOUT VOLTA"
+                task.wait(1)
+                BtnSteal.Text = "STEAL TOP"
+                BtnSteal.BackgroundColor3 = TEMA.destaque
+            end)
+        else
+            BtnSteal.Text = "SEM SPAWN"
+            task.wait(1.5)
+            BtnSteal.Text = "STEAL TOP"
+            BtnSteal.BackgroundColor3 = TEMA.destaque
+        end
+
+        stealActive = false
     end)
 
+    -- ===== AUTO-REPARO EM RESPAWN =====
     local function hookChar(char)
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
             hum.Died:Connect(function()
                 local hrp = char:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    lastDeathPos = hrp.Position
-                end
+                if hrp then lastDeathPos = hrp.Position end
             end)
         end
     end
 
-    if LocalPlayer.Character then
-        hookChar(LocalPlayer.Character)
-    end
+    if LocalPlayer.Character then hookChar(LocalPlayer.Character) end
 
     LocalPlayer.CharacterAdded:Connect(function(char)
         hookChar(char)
+
+        if not SPAWN_POSITION then
+            task.spawn(function()
+                local t0 = tick()
+                while not SPAWN_POSITION and (tick() - t0) < 5 do
+                    SPAWN_POSITION = acharSpawnNoWorkspace()
+                    if not SPAWN_POSITION then task.wait(0.3) end
+                end
+            end)
+        end
 
         if loopActive then
             if loopConn then
                 loopConn:Disconnect()
                 loopConn = nil
             end
-
             local alvoRetorno = lastDeathPos or loopPos
-
             task.wait(RESPAWN_WAIT)
             if not loopActive then return end
-
             local hrp = char:WaitForChild("HumanoidRootPart", 10)
             if not hrp then return end
-
             tweenPara(alvoRetorno, RESPAWN_TWEEN_TIME, function()
                 if loopActive and loopPos then
                     iniciarLoop(loopPos)
