@@ -434,22 +434,8 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
     if setStatus then setStatus("Selecione uma área...", Color3.fromRGB(200, 200, 220)) end
 end
 
--- PROMPT
-local armado = false
-local function ehSmartPrompt(prompt)
-    if not prompt then return false end
-    local pai = prompt.Parent
-    if not pai then return false end
-    return pai.Name == NOME_SMART
-end
-
-ProximityPromptService.PromptTriggered:Connect(function(prompt, player)
-    if not armado then return end
-    if player ~= LocalPlayer then return end
-    if not ehSmartPrompt(prompt) then return end
-    Teleporte.iniciar()
-    Disfarce.iniciar()
-end)
+-- (NOTA: o hook antigo do "armado" + SmartPromptPart foi REMOVIDO.
+--  Agora o ANTI-BOSS tem seu próprio painel flutuante com toggle interno.)
 
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
@@ -1510,6 +1496,254 @@ local btnAutoSteal, contAutoSteal, labelAutoSteal, setaAutoSteal,
     criarBotaoCyber(30, "🤖 AUTO-STEAL", 8)
 
 -- ============================================
+-- 🥚 PAINEL ANTI-BOSS (novo)
+-- ============================================
+local AntiBoss = { gui = nil, aberto = false, ativado = false }
+
+local function criarAntiBossGui()
+    if AntiBoss.gui then return AntiBoss.gui end
+
+    local VelocidadeRun    = 1e15
+    local DistanciaChegada = 4
+    local IgnorarEixoY     = true
+    local WalkSpeedFake    = 500
+    local JumpPowerFake    = 120
+    local NomeParte        = "SmartPromptPart"
+    local NomePrompt       = "CarryAreaEgg"
+    local TempoNoSpawn     = 0.3
+
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "AntiBossGui"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Enabled = false
+    ScreenGui.Parent = PlayerGui
+
+    local MainFrame = Instance.new("Frame")
+    MainFrame.Size = UDim2.new(0, 180, 0, 45)
+    MainFrame.Position = UDim2.new(0.5, -90, 1, -180)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+    MainFrame.BorderSizePixel = 0
+    MainFrame.Active = true
+    MainFrame.Draggable = true
+    MainFrame.Parent = ScreenGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = MainFrame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(60, 60, 70)
+    stroke.Thickness = 1
+    stroke.Parent = MainFrame
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(0.6, 0, 1, 0)
+    Title.Position = UDim2.new(0, 12, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "ANTI-BOSS"
+    Title.TextColor3 = Color3.fromRGB(230, 230, 230)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = MainFrame
+
+    local ToggleBg = Instance.new("Frame")
+    ToggleBg.Size = UDim2.new(0, 50, 0, 26)
+    ToggleBg.Position = UDim2.new(1, -60, 0.5, -13)
+    ToggleBg.BackgroundColor3 = Color3.fromRGB(60, 60, 65)
+    ToggleBg.BorderSizePixel = 0
+    ToggleBg.Parent = MainFrame
+
+    local tbCorner = Instance.new("UICorner")
+    tbCorner.CornerRadius = UDim.new(1, 0)
+    tbCorner.Parent = ToggleBg
+
+    local ToggleCircle = Instance.new("Frame")
+    ToggleCircle.Size = UDim2.new(0, 22, 0, 22)
+    ToggleCircle.Position = UDim2.new(0, 2, 0.5, -11)
+    ToggleCircle.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+    ToggleCircle.BorderSizePixel = 0
+    ToggleCircle.Parent = ToggleBg
+
+    local tcCorner = Instance.new("UICorner")
+    tcCorner.CornerRadius = UDim.new(1, 0)
+    tcCorner.Parent = ToggleCircle
+
+    local Button = Instance.new("TextButton")
+    Button.Size = UDim2.new(1, 0, 1, 0)
+    Button.BackgroundTransparency = 1
+    Button.Text = ""
+    Button.Parent = ToggleBg
+
+    -- ===== ESTADOS INTERNOS =====
+    local Character, Humanoid, RootPart
+    local connRun = nil
+    local walkOriginal, jumpOriginal
+    local alvoAtual = nil
+    local promptsConectados = setmetatable({}, {__mode = "k"})
+    local executando = false
+
+    local function AtualizarPersonagem()
+        Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        Humanoid  = Character:WaitForChild("Humanoid")
+        RootPart  = Character:WaitForChild("HumanoidRootPart")
+    end
+    AtualizarPersonagem()
+
+    LocalPlayer.CharacterAdded:Connect(function()
+        task.wait(0.5)
+        if connRun then connRun:Disconnect(); connRun = nil end
+        alvoAtual, walkOriginal, jumpOriginal = nil, nil, nil
+        AtualizarPersonagem()
+    end)
+
+    local function PararTeleporte()
+        if connRun then connRun:Disconnect(); connRun = nil end
+        if Humanoid and Humanoid.Parent then
+            if walkOriginal then Humanoid.WalkSpeed = walkOriginal end
+            if jumpOriginal then Humanoid.JumpPower = jumpOriginal end
+        end
+        alvoAtual = nil
+    end
+
+    local function TeleportarPara(posicaoAlvo, aoChegar)
+        if not RootPart or not Humanoid or not RootPart.Parent then return end
+        if connRun then connRun:Disconnect() end
+
+        if not walkOriginal then walkOriginal = Humanoid.WalkSpeed end
+        if not jumpOriginal then jumpOriginal = Humanoid.JumpPower end
+        Humanoid.WalkSpeed = WalkSpeedFake
+        Humanoid.JumpPower = JumpPowerFake
+        alvoAtual = posicaoAlvo
+
+        connRun = RunService.Heartbeat:Connect(function(dt)
+            if not RootPart or not RootPart.Parent or not Humanoid.Parent then
+                PararTeleporte(); return
+            end
+            local origem = RootPart.Position
+            local delta  = alvoAtual - origem
+            if IgnorarEixoY then delta = Vector3.new(delta.X, 0, delta.Z) end
+            local dist = delta.Magnitude
+
+            if dist <= DistanciaChegada then
+                RootPart.CFrame = CFrame.new(alvoAtual) * (RootPart.CFrame - RootPart.Position)
+                PararTeleporte()
+                if aoChegar then aoChegar() end
+                return
+            end
+
+            local passo   = math.min(VelocidadeRun * dt, dist)
+            local direcao = delta.Unit
+            local novaPos = origem + direcao * passo
+            if IgnorarEixoY then
+                novaPos = Vector3.new(novaPos.X, origem.Y, novaPos.Z)
+            end
+
+            local lookDir = direcao
+            if lookDir.Magnitude < 0.001 then lookDir = Vector3.new(0, 0, 1) end
+            RootPart.CFrame = CFrame.lookAt(novaPos, novaPos + lookDir)
+        end)
+    end
+
+    local function GetSpawnLocation()
+        return Workspace:FindFirstChildOfClass("SpawnLocation")
+    end
+
+    local function ConectarPrompt(prompt)
+        if promptsConectados[prompt] then return end
+        promptsConectados[prompt] = true
+
+        prompt.Triggered:Connect(function()
+            if not AntiBoss.ativado then return end
+            if executando then return end
+            if not RootPart or not RootPart.Parent then return end
+
+            local spawn = GetSpawnLocation()
+            if not spawn then return end
+
+            executando = true
+            local posicaoSalva = RootPart.Position
+
+            TeleportarPara(spawn.Position, function()
+                task.wait(TempoNoSpawn)
+                if not AntiBoss.ativado then executando = false; return end
+                TeleportarPara(posicaoSalva, function()
+                    executando = false
+                end)
+            end)
+        end)
+    end
+
+    local function VerificarPart(part)
+        if part.Name ~= NomeParte then return end
+        for _, child in ipairs(part:GetChildren()) do
+            if child:IsA("ProximityPrompt") and child.Name == NomePrompt then
+                ConectarPrompt(child)
+            end
+        end
+    end
+
+    local function EscanearTudo()
+        for _, obj in ipairs(Workspace:GetDescendants()) do
+            if obj.Name == NomeParte then VerificarPart(obj) end
+        end
+    end
+
+    Workspace.DescendantAdded:Connect(function(obj)
+        if not AntiBoss.ativado then return end
+        if obj.Name == NomeParte then
+            task.wait(0.05); VerificarPart(obj)
+        elseif obj:IsA("ProximityPrompt") and obj.Name == NomePrompt then
+            task.wait(0.05)
+            local p = obj.Parent
+            while p and p ~= Workspace do
+                if p.Name == NomeParte then ConectarPrompt(obj); break end
+                p = p.Parent
+            end
+        end
+    end)
+
+    local TweenInfoToggle = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    local function SetAtivado(valor)
+        AntiBoss.ativado = valor
+        if valor then
+            TweenService:Create(ToggleBg, TweenInfoToggle, {BackgroundColor3 = Color3.fromRGB(80, 200, 120)}):Play()
+            TweenService:Create(ToggleCircle, TweenInfoToggle, {Position = UDim2.new(1, -24, 0.5, -11)}):Play()
+            EscanearTudo()
+            Toast("Anti-Boss ON", VERDE)
+        else
+            TweenService:Create(ToggleBg, TweenInfoToggle, {BackgroundColor3 = Color3.fromRGB(60, 60, 65)}):Play()
+            TweenService:Create(ToggleCircle, TweenInfoToggle, {Position = UDim2.new(0, 2, 0.5, -11)}):Play()
+            PararTeleporte()
+            executando = false
+            Toast("Anti-Boss OFF", AMARELO)
+        end
+    end
+
+    Button.MouseButton1Click:Connect(function()
+        SetAtivado(not AntiBoss.ativado)
+    end)
+
+    AntiBoss.gui = ScreenGui
+    return ScreenGui
+end
+
+local function toggleAntiBoss()
+    if not AntiBoss.gui then
+        criarAntiBossGui()
+    end
+    AntiBoss.aberto = not AntiBoss.aberto
+    AntiBoss.gui.Enabled = AntiBoss.aberto
+    if AntiBoss.aberto then
+        Toast("Painel Anti-Boss ON", VERDE)
+    else
+        Toast("Painel Anti-Boss OFF", AMARELO)
+    end
+end
+
+-- ============================================
 -- PAINEL FLUTUANTE (TP-EGG)
 -- ============================================
 local PainelFlutuante = { gui = nil, aberto = false }
@@ -1909,7 +2143,6 @@ local function criarAutoStealGui()
     local MOSTRAR_SUFIXO_S    = false
     local ORDENAR_POR_VALOR   = true
 
-    -- Fluxo do steal
     local AUTO_DROP_TIMEOUT      = 8
     local TIMEOUT_RETORNO        = 120
     local HOLD_DURATION_RETORNO  = 1.2
@@ -2197,7 +2430,6 @@ local function criarAutoStealGui()
     local tweenConn = nil
     local lastDeathPos = nil
 
-    -- ===== SPAWN (pega do Workspace) =====
     local SPAWN_POSITION = nil
 
     local function acharSpawnNoWorkspace()
@@ -2232,11 +2464,6 @@ local function criarAutoStealGui()
         while not SPAWN_POSITION and (tick() - t0) < 5 do
             SPAWN_POSITION = acharSpawnNoWorkspace()
             if not SPAWN_POSITION then task.wait(0.3) end
-        end
-        if SPAWN_POSITION then
-            print("[Auto-Steal] Spawn encontrado em:", SPAWN_POSITION)
-        else
-            warn("[Auto-Steal] Spawn não encontrado (vai re-tentar no respawn)")
         end
     end)
 
@@ -2367,7 +2594,6 @@ local function criarAutoStealGui()
         end)
     end
 
-    -- ===== ANDAR NORMAL =====
     local function walkNormalTo(destino, callback)
         local char = LocalPlayer.Character
         local humanoid = char and char:FindFirstChildOfClass("Humanoid")
@@ -2418,7 +2644,6 @@ local function criarAutoStealGui()
         end)
     end
 
-    -- ===== POOL / LISTA =====
     local framePool = {}
     local activeItems = {}
     local frameTemplate = nil
@@ -2699,7 +2924,6 @@ local function criarAutoStealGui()
         atualizarSeguro()
     end)
 
-    -- ===== STEAL =====
     local function pararSteal()
         stealActive = false
         if stealBodyVel then
@@ -2731,7 +2955,6 @@ local function criarAutoStealGui()
         pararLoop()
     end)
 
-    -- ===== AUTO DROP =====
     local function tentarDrop()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
         if not pg then return false end
@@ -2792,7 +3015,6 @@ local function criarAutoStealGui()
         return false
     end
 
-    -- ===== BOTÃO PRINCIPAL: STEAL TOP =====
     BtnSteal.MouseButton1Click:Connect(function()
         if stealActive then
             pararSteal()
@@ -2834,7 +3056,6 @@ local function criarAutoStealGui()
             return
         end
 
-        -- ===== FASE 1: aproximar =====
         while stealActive do
             local c = LocalPlayer.Character
             local h = c and c:FindFirstChild("HumanoidRootPart")
@@ -2880,7 +3101,6 @@ local function criarAutoStealGui()
             return
         end
 
-        -- ===== FASE 2: segurar prompt (pegar o ovo) =====
         BtnSteal.Text = "SEGURANDO..."
         local prompt = acharPromptMaisProximo(targetPos)
         if prompt then
@@ -2899,7 +3119,6 @@ local function criarAutoStealGui()
             if conn then conn:Disconnect() end
         end
 
-        -- ===== FASE 3: TP disfarçado até LOOP_POSITION =====
         BtnSteal.Text = "TELEPORTANDO..."
         local tpOk = false
         teleportarDisfarcado(LOOP_POSITION, function(sucesso)
@@ -2918,7 +3137,6 @@ local function criarAutoStealGui()
             return
         end
 
-        -- ===== FASE 4: LOOP por 1s → AUTO DROP =====
         BtnSteal.Text = "LOOPANDO..."
         task.wait(WAIT_LOOP_ANTES_DROP)
 
@@ -2937,9 +3155,7 @@ local function criarAutoStealGui()
         pararLoop()
         BtnSteal.Text = "✅ SUCESSO!"
         BtnSteal.BackgroundColor3 = TEMA.destaque
-        print("[AutoSteal] ✅ Egg dropado com sucesso!")
 
-        -- ===== FASE 5: espera 1s → segura prompt próximo =====
         task.wait(WAIT_APOS_DROP)
 
         local c = LocalPlayer.Character
@@ -2959,7 +3175,6 @@ local function criarAutoStealGui()
             pcall(function() promptRetorno:InputHoldEnd() end)
         end
 
-        -- ===== FASE 6: andar normal até o spawn =====
         BtnSteal.Text = "VOLTANDO..."
         if not SPAWN_POSITION then
             SPAWN_POSITION = acharSpawnNoWorkspace()
@@ -2983,7 +3198,6 @@ local function criarAutoStealGui()
         stealActive = false
     end)
 
-    -- ===== AUTO-REPARO EM RESPAWN =====
     local function hookChar(char)
         local hum = char:FindFirstChildOfClass("Humanoid")
         if hum then
@@ -3125,8 +3339,7 @@ end)
 -- Callbacks
 btnAnti.MouseButton1Click:Connect(function()
     bounceAnti()
-    armado = not armado
-    if not armado then Teleporte.parar() Disfarce.limpar() end
+    toggleAntiBoss()
 end)
 
 btnTrap.MouseButton1Click:Connect(function()
@@ -3185,8 +3398,7 @@ end)
 UserInputService.InputBegan:Connect(function(i, gp)
     if gp then return end
     if i.KeyCode == Enum.KeyCode.T then
-        armado = not armado
-        if not armado then Teleporte.parar() Disfarce.limpar() end
+        toggleAntiBoss()
     elseif i.KeyCode == Enum.KeyCode.H then
         AntiKB = not AntiKB
         if AntiKB then Toast("Anti-KB ON", VERDE)
@@ -3227,7 +3439,7 @@ end)
 
 task.spawn(function()
     while gui.Parent do
-        if armado then
+        if AntiBoss.aberto then
             contAnti.BackgroundColor3     = Color3.fromRGB(20, 55, 28)
             barraAnti.BackgroundColor3    = VERDE
             bordaAnti.Color               = VERDE
@@ -3321,7 +3533,11 @@ task.spawn(function()
             labelAutoSteal.Text              = "🤖 AUTO-STEAL"
         end
 
-        if AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
+        if AntiBoss.ativado and not (Teleporte.ativo or Disfarce.ativo) then
+            ledRodape.BackgroundColor3    = VERDE
+            labelStatus.TextColor3        = VERDE
+            labelStatus.Text              = "STATUS: ANTI-BOSS ATIVO"
+        elseif AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
             ledRodape.BackgroundColor3    = VERMELHO
             labelStatus.TextColor3        = VERMELHO
             labelStatus.Text              = "STATUS: ANTI-TRAP ON"
@@ -3329,10 +3545,6 @@ task.spawn(function()
             ledRodape.BackgroundColor3    = LARANJA
             labelStatus.TextColor3        = LARANJA
             labelStatus.Text              = "STATUS: TELEPORTANDO..."
-        elseif armado then
-            ledRodape.BackgroundColor3    = VERDE
-            labelStatus.TextColor3        = VERDE
-            labelStatus.Text              = "STATUS: ARMADO"
         elseif AntiKB then
             ledRodape.BackgroundColor3    = AZUL
             labelStatus.TextColor3        = AZUL
