@@ -687,8 +687,7 @@ end
 
 local btnTabFunc  = criarTabBtn("🎯", 1)
 local btnTabTps   = criarTabBtn("🌀", 2)
-local btnTabSpeed = criarTabBtn("⚡", 3)
-local btnTabHop   = criarTabBtn("🌐", 4)
+local btnTabHop   = criarTabBtn("🌐", 3)
 
 -- Containers
 local containerFunc = Instance.new("Frame")
@@ -705,14 +704,6 @@ containerTps.BackgroundTransparency = 1
 containerTps.ZIndex = 3
 containerTps.Visible = false
 containerTps.Parent = menu
-
-local containerSpeed = Instance.new("Frame")
-containerSpeed.Size = UDim2.new(1, 0, 1, -98)
-containerSpeed.Position = UDim2.new(0, 0, 0, 64)
-containerSpeed.BackgroundTransparency = 1
-containerSpeed.ZIndex = 3
-containerSpeed.Visible = false
-containerSpeed.Parent = menu
 
 local containerHop = Instance.new("Frame")
 containerHop.Size = UDim2.new(1, 0, 1, -98)
@@ -865,147 +856,6 @@ local function popularAreas()
         end
     end
 end
-
--- ============================================
--- ABA SPEED (⚡)
--- ============================================
-local Speed = {
-    Active      = false,
-    Value       = 100,
-    Thread      = nil,
-    WalkOrig    = nil,
-    Capturado   = false,
-}
-
-local speedStatus = Instance.new("TextLabel")
-speedStatus.Size = UDim2.new(1, -16, 0, 16)
-speedStatus.Position = UDim2.new(0, 8, 0, 0)
-speedStatus.BackgroundTransparency = 1
-speedStatus.Font = Enum.Font.GothamBold
-speedStatus.TextSize = 10
-speedStatus.TextColor3 = Color3.fromRGB(180, 220, 255)
-speedStatus.TextXAlignment = Enum.TextXAlignment.Left
-speedStatus.Text = "Speed: Inativo"
-speedStatus.ZIndex = 4
-speedStatus.Parent = containerSpeed
-
-local btnSpeedToggle = Instance.new("TextButton")
-btnSpeedToggle.Size = UDim2.new(1, -16, 0, 30)
-btnSpeedToggle.Position = UDim2.new(0, 8, 0, 22)
-btnSpeedToggle.BackgroundColor3 = BG_BTN
-btnSpeedToggle.BorderSizePixel = 0
-btnSpeedToggle.Font = Enum.Font.GothamBold
-btnSpeedToggle.TextSize = 12
-btnSpeedToggle.TextColor3 = Color3.fromRGB(230, 220, 255)
-btnSpeedToggle.Text = "⚡ Speed: OFF"
-btnSpeedToggle.ZIndex = 4
-btnSpeedToggle.Parent = containerSpeed
-Instance.new("UICorner", btnSpeedToggle).CornerRadius = UDim.new(0, 7)
-
-local strokeSpeed = Instance.new("UIStroke")
-strokeSpeed.Color = ROXO_DARK
-strokeSpeed.Thickness = 1
-strokeSpeed.Parent = btnSpeedToggle
-
-local valorLbl = Instance.new("TextLabel")
-valorLbl.Size = UDim2.new(1, -16, 0, 14)
-valorLbl.Position = UDim2.new(0, 8, 0, 58)
-valorLbl.BackgroundTransparency = 1
-valorLbl.Font = Enum.Font.Gotham
-valorLbl.TextSize = 10
-valorLbl.TextColor3 = Color3.fromRGB(200, 200, 220)
-valorLbl.TextXAlignment = Enum.TextXAlignment.Left
-valorLbl.Text = "Valor: 100 studs/s"
-valorLbl.ZIndex = 4
-valorLbl.Parent = containerSpeed
-
-local boxValor = Instance.new("TextBox")
-boxValor.Size = UDim2.new(1, -16, 0, 26)
-boxValor.Position = UDim2.new(0, 8, 0, 74)
-boxValor.BackgroundColor3 = BG_BTN
-boxValor.BorderSizePixel = 0
-boxValor.Font = Enum.Font.GothamBold
-boxValor.TextSize = 11
-boxValor.TextColor3 = Color3.fromRGB(230, 220, 255)
-boxValor.PlaceholderText = "Digite o valor (1-1000)"
-boxValor.Text = ""
-boxValor.ZIndex = 4
-boxValor.Parent = containerSpeed
-Instance.new("UICorner", boxValor).CornerRadius = UDim.new(0, 7)
-
-boxValor.FocusLost:Connect(function()
-    local n = tonumber(boxValor.Text)
-    if n then
-        n = math.clamp(n, 1, 1000)
-        Speed.Value = n
-        valorLbl.Text = "Valor: " .. n .. " studs/s"
-        boxValor.Text = ""
-    else
-        boxValor.Text = ""
-    end
-end)
-
-local function aplicarSpeed()
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum then
-        pcall(function() hum.WalkSpeed = Speed.Value end)
-    end
-end
-
-local function pararSpeed()
-    Speed.Active = false
-    if Speed.Thread then
-        pcall(task.cancel, Speed.Thread)
-        Speed.Thread = nil
-    end
-    local char = LocalPlayer.Character
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if hum and Speed.WalkOrig then
-        pcall(function() hum.WalkSpeed = Speed.WalkOrig end)
-    end
-    Speed.WalkOrig  = nil
-    Speed.Capturado = false
-
-    btnSpeedToggle.Text = "⚡ Speed: OFF"
-    btnSpeedToggle.BackgroundColor3 = BG_BTN
-    strokeSpeed.Color = ROXO_DARK
-end
-
-local function iniciarSpeed()
-    if not Speed.Capturado then
-        local char = LocalPlayer.Character
-        local hum = char and char:FindFirstChildOfClass("Humanoid")
-        if hum then
-            Speed.WalkOrig = hum.WalkSpeed
-            Speed.Capturado = true
-        end
-    end
-
-    Speed.Active = true
-    btnSpeedToggle.Text = "⚡ Speed: ON"
-    btnSpeedToggle.BackgroundColor3 = Color3.fromRGB(20, 55, 28)
-    strokeSpeed.Color = VERDE
-    aplicarSpeed()
-
-    if Speed.Thread then pcall(task.cancel, Speed.Thread) end
-    Speed.Thread = task.spawn(function()
-        while Speed.Active do
-            aplicarSpeed()
-            task.wait(0.2)
-        end
-    end)
-end
-
-btnSpeedToggle.MouseButton1Click:Connect(function()
-    if Speed.Active then
-        pararSpeed()
-        Toast("Speed OFF", AMARELO)
-    else
-        iniciarSpeed()
-        Toast("Speed ON", VERDE)
-    end
-end)
 
 -- ============================================
 -- ABA 🌐 — SERVER HOP
@@ -1335,8 +1185,7 @@ local abaAtiva = 1
 local function atualizarAbas()
     containerFunc.Visible  = (abaAtiva == 1)
     containerTps.Visible   = (abaAtiva == 2)
-    containerSpeed.Visible = (abaAtiva == 3)
-    containerHop.Visible   = (abaAtiva == 4)
+    containerHop.Visible   = (abaAtiva == 3)
 
     local function setCor(btn, ativo)
         if ativo then
@@ -1349,8 +1198,7 @@ local function atualizarAbas()
     end
     setCor(btnTabFunc,  abaAtiva == 1)
     setCor(btnTabTps,   abaAtiva == 2)
-    setCor(btnTabSpeed, abaAtiva == 3)
-    setCor(btnTabHop,   abaAtiva == 4)
+    setCor(btnTabHop,   abaAtiva == 3)
 end
 
 btnTabFunc.MouseButton1Click:Connect(function()
@@ -1364,13 +1212,8 @@ btnTabTps.MouseButton1Click:Connect(function()
     popularAreas()
 end)
 
-btnTabSpeed.MouseButton1Click:Connect(function()
-    abaAtiva = 3
-    atualizarAbas()
-end)
-
 btnTabHop.MouseButton1Click:Connect(function()
-    abaAtiva = 4
+    abaAtiva = 3
     atualizarAbas()
 end)
 
@@ -1492,8 +1335,12 @@ local btnAutoSteal, contAutoSteal, labelAutoSteal, setaAutoSteal,
       barraAutoSteal, bordaAutoSteal, bounceAutoSteal =
     criarBotaoCyber(30, "🤖 AUTO-STEAL", 8)
 
+local btnOvoInv, contOvoInv, labelOvoInv, setaOvoInv,
+      barraOvoInv, bordaOvoInv, bounceOvoInv =
+    criarBotaoCyber(30, "🫥 OVO INVISÍVEL", 9)
+
 -- ============================================
--- 🥚 PAINEL ANTI-BOSS (com Disfarce restaurado)
+-- 🥚 PAINEL ANTI-BOSS
 -- ============================================
 local AntiBoss = { gui = nil, aberto = false, ativado = false }
 
@@ -1573,7 +1420,6 @@ local function criarAntiBossGui()
     Button.Text = ""
     Button.Parent = ToggleBg
 
-    -- ===== ESTADOS INTERNOS =====
     local Character, Humanoid, RootPart
     local connRun = nil
     local walkOriginal, jumpOriginal
@@ -1659,7 +1505,6 @@ local function criarAntiBossGui()
             local spawn = GetSpawnLocation()
             if not spawn then return end
 
-            -- 👇 RESTAURADO: clone + trava câmera
             pcall(function() Disfarce.iniciar() end)
 
             executando = true
@@ -3272,6 +3117,216 @@ local function toggleAutoSteal()
     end
 end
 
+-- ============================================
+-- 🫥 PAINEL OVO INVISÍVEL (integrado)
+-- ============================================
+local OvoInvisivel = { aberto = false, ativo = false, gui = nil }
+
+local function isOvo(tool)
+    if not tool or not tool:IsA("Tool") then return false end
+    local uid = tool:GetAttribute("UID")
+    local it  = tool:GetAttribute("ItemType")
+    return uid or it == "Egg" or tool.Name:lower():find("egg")
+end
+
+local function aplicarInvisibilidadeTool(tool)
+    if not tool or not tool.Parent then return end
+    for _, d in ipairs(tool:GetDescendants()) do
+        pcall(function()
+            if d:IsA("BasePart") then
+                d.LocalTransparencyModifier = 1
+                d.Transparency = 1
+                d.CanCollide = false
+                d.CanTouch = false
+                d.CanQuery = false
+            elseif d:IsA("Decal") or d:IsA("Texture") then
+                d.Transparency = 1
+            elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
+                d.Enabled = false
+            elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
+                d.Enabled = false
+            elseif d:IsA("Highlight") then
+                d.Enabled = false
+            elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+                d.Enabled = false
+            elseif d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
+                d.Enabled = false
+            end
+        end)
+    end
+end
+
+local function restaurarInvisibilidadeTool(tool)
+    if not tool or not tool.Parent then return end
+    for _, d in ipairs(tool:GetDescendants()) do
+        pcall(function()
+            if d:IsA("BasePart") then
+                d.LocalTransparencyModifier = 0
+                d.Transparency = 0
+            elseif d:IsA("Decal") or d:IsA("Texture") then
+                d.Transparency = 0
+            elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
+                d.Enabled = true
+            elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
+                d.Enabled = true
+            elseif d:IsA("Highlight") then
+                d.Enabled = true
+            elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+                d.Enabled = true
+            elseif d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
+                d.Enabled = true
+            end
+        end)
+    end
+end
+
+local function aplicarInvisibilidadeOvo()
+    if not OvoInvisivel.ativo then return end
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, t in ipairs(char:GetChildren()) do
+        if isOvo(t) then
+            aplicarInvisibilidadeTool(t)
+        end
+    end
+end
+
+local function hookOvo(child)
+    if not OvoInvisivel.ativo then return end
+    if isOvo(child) then
+        task.wait(0.05)
+        aplicarInvisibilidadeTool(child)
+    end
+end
+
+local function criarOvoInvisivelGui()
+    if OvoInvisivel.gui then return OvoInvisivel.gui end
+
+    local frame = Instance.new("Frame")
+    frame.Name = "OvoInvisivelPanel"
+    frame.Size = UDim2.new(0, 220, 0, 60)
+    frame.Position = UDim2.new(0.5, -110, 0.85, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    frame.BackgroundTransparency = 0.15
+    frame.BorderSizePixel = 0
+    frame.Active = true
+    frame.Draggable = true
+    frame.Visible = false
+    frame.ZIndex = 50
+    frame.Parent = gui
+
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+    local stroke = Instance.new("UIStroke", frame)
+    stroke.Color = Color3.fromRGB(60, 60, 70)
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.3
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -80, 1, 0)
+    title.Position = UDim2.new(0, 15, 0, 0)
+    title.BackgroundTransparency = 1
+    title.Text = "Ovo Invisível"
+    title.TextColor3 = Color3.fromRGB(240, 240, 240)
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 16
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Parent = frame
+
+    local switchTrack = Instance.new("TextButton")
+    switchTrack.Size = UDim2.new(0, 50, 0, 26)
+    switchTrack.Position = UDim2.new(1, -65, 0.5, 0)
+    switchTrack.AnchorPoint = Vector2.new(0, 0.5)
+    switchTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    switchTrack.BorderSizePixel = 0
+    switchTrack.Text = ""
+    switchTrack.AutoButtonColor = false
+    switchTrack.Parent = frame
+    Instance.new("UICorner", switchTrack).CornerRadius = UDim.new(1, 0)
+
+    local switchBall = Instance.new("Frame")
+    switchBall.Size = UDim2.new(0, 20, 0, 20)
+    switchBall.Position = UDim2.new(0, 3, 0.5, 0)
+    switchBall.AnchorPoint = Vector2.new(0, 0.5)
+    switchBall.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+    switchBall.BorderSizePixel = 0
+    switchBall.Parent = switchTrack
+    Instance.new("UICorner", switchBall).CornerRadius = UDim.new(1, 0)
+
+    local function animarSwitch(ligado)
+        OvoInvisivel.ativo = ligado
+
+        local posAlvo   = ligado and UDim2.new(1, -23, 0.5, 0) or UDim2.new(0, 3, 0.5, 0)
+        local corTrilho = ligado and Color3.fromRGB(80, 200, 120) or Color3.fromRGB(60, 60, 70)
+        local corBola   = ligado and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(230, 230, 230)
+
+        local ti = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(switchBall,  ti, { Position = posAlvo,   BackgroundColor3 = corBola   }):Play()
+        TweenService:Create(switchTrack, ti, { BackgroundColor3 = corTrilho }):Play()
+
+        local char = LocalPlayer.Character
+        if char then
+            for _, t in ipairs(char:GetChildren()) do
+                if isOvo(t) then
+                    if ligado then
+                        aplicarInvisibilidadeTool(t)
+                    else
+                        restaurarInvisibilidadeTool(t)
+                    end
+                end
+            end
+        end
+
+        Toast(ligado and "Ovo Invisível ON" or "Ovo Invisível OFF",
+              ligado and VERDE or AMARELO)
+    end
+
+    switchTrack.MouseButton1Click:Connect(function()
+        animarSwitch(not OvoInvisivel.ativo)
+    end)
+
+    OvoInvisivel.gui = frame
+    OvoInvisivel.animarSwitch = animarSwitch
+    return frame
+end
+
+local function toggleOvoInvisivel()
+    if not OvoInvisivel.gui then
+        criarOvoInvisivelGui()
+    end
+    OvoInvisivel.aberto = not OvoInvisivel.aberto
+    OvoInvisivel.gui.Visible = OvoInvisivel.aberto
+    if OvoInvisivel.aberto then
+        Toast("Painel Ovo Invisível ON", VERDE)
+    else
+        Toast("Painel Ovo Invisível OFF", AMARELO)
+    end
+end
+
+-- Hooks de personagem para o Ovo Invisível
+local function onCharOvo(char)
+    task.wait(0.5)
+    char.ChildAdded:Connect(hookOvo)
+    if OvoInvisivel.ativo then
+        aplicarInvisibilidadeOvo()
+    end
+end
+
+if LocalPlayer.Character then
+    onCharOvo(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(onCharOvo)
+
+-- Loop principal do Ovo Invisível
+task.spawn(function()
+    while gui.Parent do
+        task.wait(0.03)
+        if OvoInvisivel.ativo then
+            pcall(aplicarInvisibilidadeOvo)
+        end
+    end
+end)
+
 -- Faixa base + rodapé
 local faixaBase = Instance.new("Frame")
 faixaBase.Size = UDim2.new(1, -16, 0, 2)
@@ -3319,7 +3374,7 @@ labelStatus.ZIndex = 4
 labelStatus.Parent = rodape
 
 -- Minimizar
-local corpoPainel = { faixaTopo, tabBarHolder, containerFunc, containerTps, containerSpeed, containerHop, faixaBase, rodape }
+local corpoPainel = { faixaTopo, tabBarHolder, containerFunc, containerTps, containerHop, faixaBase, rodape }
 local minimizado = false
 local tamanhoNormal = UDim2.new(0, 200, 0, 220)
 local tamanhoMin    = UDim2.new(0, 200, 0, 36)
@@ -3382,6 +3437,11 @@ end)
 btnAutoSteal.MouseButton1Click:Connect(function()
     bounceAutoSteal()
     toggleAutoSteal()
+end)
+
+btnOvoInv.MouseButton1Click:Connect(function()
+    bounceOvoInv()
+    toggleOvoInvisivel()
 end)
 
 btnTpArea2.MouseButton1Click:Connect(function()
@@ -3534,6 +3594,22 @@ task.spawn(function()
             labelAutoSteal.TextColor3        = Color3.fromRGB(230, 220, 255)
             setaAutoSteal.TextColor3         = ROXO
             labelAutoSteal.Text              = "🤖 AUTO-STEAL"
+        end
+
+        if OvoInvisivel.aberto then
+            contOvoInv.BackgroundColor3    = Color3.fromRGB(20, 55, 28)
+            barraOvoInv.BackgroundColor3   = VERDE
+            bordaOvoInv.Color              = VERDE
+            labelOvoInv.TextColor3         = Color3.fromRGB(180, 255, 200)
+            setaOvoInv.TextColor3          = VERDE
+            labelOvoInv.Text               = "🫥 OVO INVISÍVEL  [ON]"
+        else
+            contOvoInv.BackgroundColor3    = BG_BTN
+            barraOvoInv.BackgroundColor3   = ROXO
+            bordaOvoInv.Color              = ROXO_DARK
+            labelOvoInv.TextColor3         = Color3.fromRGB(230, 220, 255)
+            setaOvoInv.TextColor3          = ROXO
+            labelOvoInv.Text               = "🫥 OVO INVISÍVEL"
         end
 
         if AntiBoss.ativado and not (Teleporte.ativo or Disfarce.ativo) then
