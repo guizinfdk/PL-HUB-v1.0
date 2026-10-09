@@ -139,7 +139,7 @@ function Teleporte.iniciar()
     end)
 end
 
--- DISFARCE
+-- DISFARCE (clone + trava camera)
 local Disfarce = { ativo = false, clone = nil, connCam = nil, thread = nil }
 
 function Disfarce.limpar()
@@ -434,9 +434,6 @@ local function executarTpAreaIntegrado(areaNome, setStatus, setBtn)
     if setStatus then setStatus("Selecione uma área...", Color3.fromRGB(200, 200, 220)) end
 end
 
--- (NOTA: o hook antigo do "armado" + SmartPromptPart foi REMOVIDO.
---  Agora o ANTI-BOSS tem seu próprio painel flutuante com toggle interno.)
-
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if Teleporte.ativo then Teleporte.parar() end
@@ -637,7 +634,7 @@ gradTopo.Transparency = NumberSequence.new({
 gradTopo.Color = ColorSequence.new(ROXO, Color3.fromRGB(200, 130, 255))
 gradTopo.Parent = faixaTopo
 
--- TabBar (4 abas com scroll horizontal)
+-- TabBar
 local tabBarHolder = Instance.new("Frame")
 tabBarHolder.Size = UDim2.new(1, -16, 0, 22)
 tabBarHolder.Position = UDim2.new(0, 8, 0, 38)
@@ -1332,7 +1329,7 @@ btnHopLista.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================
--- SISTEMA DE ABAS (4 ABAS)
+-- SISTEMA DE ABAS
 -- ============================================
 local abaAtiva = 1
 local function atualizarAbas()
@@ -1469,34 +1466,47 @@ local function criarBotaoCyber(altura, texto, ordem)
     return btn, cont, label, seta, barraLat, bordaBtn, bounce
 end
 
+-- ANTI-BOSS (1)
 local btnAnti,  contAnti,  labelAnti,  setaAnti,  barraAnti,  bordaAnti,  bounceAnti  =
     criarBotaoCyber(30, "🥚 ANTI-BOSS", 1)
 
+-- 👻 INVISIBLE EGG (2) — NOVO
+local btnInvisible, contInvisible, labelInvisible, setaInvisible,
+      barraInvisible, bordaInvisible, bounceInvisible =
+    criarBotaoCyber(30, "👻 INVISIBLE EGG", 2)
+
+-- ANTI-TRAP (3)
 local btnTrap,  contTrap,  labelTrap,  setaTrap,  barraTrap,  bordaTrap,  bounceTrap  =
-    criarBotaoCyber(30, "🚫 ANTI-TRAP", 2)
+    criarBotaoCyber(30, "🚫 ANTI-TRAP", 3)
 
+-- ANTI-KB (4)
 local btnKB,    contKB,    labelKB,    setaKB,    barraKB,    bordaKB,    bounceKB    =
-    criarBotaoCyber(30, "💫 ANTI-KNOCKBACK", 3)
+    criarBotaoCyber(30, "💫 ANTI-KNOCKBACK", 4)
 
+-- BYPASS (5)
 local btnBypass, contBypass, labelBypass, setaBypass, barraBypass, bordaBypass, bounceBypass =
-    criarBotaoCyber(30, "🔥 BYPASS", 4)
+    criarBotaoCyber(30, "🔥 BYPASS", 5)
 
+-- DESTINO (6)
 local btnDst,   contDst,   labelDst,   setaDst,   barraDst,   bordaDst,   bounceDst   =
-    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 5)
+    criarBotaoCyber(30, "📍 DEFINIR DESTINO", 6)
 
+-- RESET SPAWN (7)
 local btnReset, contReset, labelReset, setaReset, barraReset, bordaReset, bounceReset =
-    criarBotaoCyber(30, "🎯 RESET SPAWN", 6)
+    criarBotaoCyber(30, "🎯 RESET SPAWN", 7)
 
+-- TP-EGG (8)
 local btnFlutuante, contFlutuante, labelFlutuante, setaFlutuante,
       barraFlutuante, bordaFlutuante, bounceFlutuante =
-    criarBotaoCyber(30, "🌌 TP-EGG", 7)
+    criarBotaoCyber(30, "🌌 TP-EGG", 8)
 
+-- AUTO-STEAL (9)
 local btnAutoSteal, contAutoSteal, labelAutoSteal, setaAutoSteal,
       barraAutoSteal, bordaAutoSteal, bounceAutoSteal =
-    criarBotaoCyber(30, "🤖 AUTO-STEAL", 8)
+    criarBotaoCyber(30, "🤖 AUTO-STEAL", 9)
 
 -- ============================================
--- 🥚 PAINEL ANTI-BOSS (novo)
+-- 🥚 PAINEL ANTI-BOSS (com Disfarce/clone + trava camera)
 -- ============================================
 local AntiBoss = { gui = nil, aberto = false, ativado = false }
 
@@ -1662,12 +1672,19 @@ local function criarAntiBossGui()
             local spawn = GetSpawnLocation()
             if not spawn then return end
 
+            -- 👇 RESTAURADO: aplica clone + trava câmera
+            pcall(function() Disfarce.iniciar() end)
+
             executando = true
             local posicaoSalva = RootPart.Position
 
             TeleportarPara(spawn.Position, function()
                 task.wait(TempoNoSpawn)
-                if not AntiBoss.ativado then executando = false; return end
+                if not AntiBoss.ativado then
+                    executando = false
+                    pcall(function() Disfarce.limpar() end)
+                    return
+                end
                 TeleportarPara(posicaoSalva, function()
                     executando = false
                 end)
@@ -1717,6 +1734,7 @@ local function criarAntiBossGui()
             TweenService:Create(ToggleBg, TweenInfoToggle, {BackgroundColor3 = Color3.fromRGB(60, 60, 65)}):Play()
             TweenService:Create(ToggleCircle, TweenInfoToggle, {Position = UDim2.new(0, 2, 0.5, -11)}):Play()
             PararTeleporte()
+            pcall(function() Disfarce.limpar() end)
             executando = false
             Toast("Anti-Boss OFF", AMARELO)
         end
@@ -1740,6 +1758,245 @@ local function toggleAntiBoss()
         Toast("Painel Anti-Boss ON", VERDE)
     else
         Toast("Painel Anti-Boss OFF", AMARELO)
+    end
+end
+
+-- ============================================
+-- 👻 PAINEL INVISIBLE EGG (NOVO)
+-- ============================================
+local InvisibleEgg = { gui = nil, aberto = false, ativado = false }
+
+local function criarInvisibleEggGui()
+    if InvisibleEgg.gui then return InvisibleEgg.gui end
+
+    local State = { OvoInvisivel = false }
+
+    local function isOvo(tool)
+        if not tool or not tool:IsA("Tool") then return false end
+        local uid = tool:GetAttribute("UID")
+        local it = tool:GetAttribute("ItemType")
+        return uid or it == "Egg" or tool.Name:lower():find("egg")
+    end
+
+    local function aplicarInvisibilidadeTool(tool)
+        if not tool or not tool.Parent then return end
+        for _, d in ipairs(tool:GetDescendants()) do
+            pcall(function()
+                if d:IsA("BasePart") then
+                    d.LocalTransparencyModifier = 1
+                    d.Transparency = 1
+                    d.CanCollide = false
+                    d.CanTouch = false
+                    d.CanQuery = false
+                elseif d:IsA("Decal") or d:IsA("Texture") then
+                    d.Transparency = 1
+                elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
+                    d.Enabled = false
+                elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
+                    d.Enabled = false
+                elseif d:IsA("Highlight") then
+                    d.Enabled = false
+                elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+                    d.Enabled = false
+                elseif d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
+                    d.Enabled = false
+                end
+            end)
+        end
+    end
+
+    local function restaurarInvisibilidadeTool(tool)
+        if not tool or not tool.Parent then return end
+        for _, d in ipairs(tool:GetDescendants()) do
+            pcall(function()
+                if d:IsA("BasePart") then
+                    d.LocalTransparencyModifier = 0
+                    d.Transparency = 0
+                elseif d:IsA("Decal") or d:IsA("Texture") then
+                    d.Transparency = 0
+                elseif d:IsA("ParticleEmitter") or d:IsA("Trail") or d:IsA("Beam") then
+                    d.Enabled = true
+                elseif d:IsA("BillboardGui") or d:IsA("SurfaceGui") then
+                    d.Enabled = true
+                elseif d:IsA("Highlight") then
+                    d.Enabled = true
+                elseif d:IsA("PointLight") or d:IsA("SpotLight") or d:IsA("SurfaceLight") then
+                    d.Enabled = true
+                elseif d:IsA("Fire") or d:IsA("Smoke") or d:IsA("Sparkles") then
+                    d.Enabled = true
+                end
+            end)
+        end
+    end
+
+    local function aplicarInvisibilidadeOvo()
+        if not State.OvoInvisivel then return end
+        local char = LocalPlayer.Character
+        if not char then return end
+        for _, t in ipairs(char:GetChildren()) do
+            if isOvo(t) then
+                aplicarInvisibilidadeTool(t)
+            end
+        end
+    end
+
+    local function hookOvo(child)
+        if not State.OvoInvisivel then return end
+        if isOvo(child) then
+            task.wait(0.05)
+            aplicarInvisibilidadeTool(child)
+        end
+    end
+
+    -- ===== GUI =====
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "OvoInvisivelUI"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    ScreenGui.Enabled = false
+    ScreenGui.Parent = PlayerGui
+
+    local Container = Instance.new("Frame")
+    Container.Name = "Container"
+    Container.Size = UDim2.new(0, 220, 0, 60)
+    Container.Position = UDim2.new(0.5, -110, 1, -120)
+    Container.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    Container.BackgroundTransparency = 0.15
+    Container.BorderSizePixel = 0
+    Container.Active = true
+    Container.Draggable = true
+    Container.Parent = ScreenGui
+
+    local ContainerCorner = Instance.new("UICorner")
+    ContainerCorner.CornerRadius = UDim.new(0, 12)
+    ContainerCorner.Parent = Container
+
+    local ContainerStroke = Instance.new("UIStroke")
+    ContainerStroke.Color = Color3.fromRGB(60, 60, 70)
+    ContainerStroke.Thickness = 1.5
+    ContainerStroke.Transparency = 0.3
+    ContainerStroke.Parent = Container
+
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(1, -80, 1, 0)
+    Title.Position = UDim2.new(0, 15, 0, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = "Ovo Invisível"
+    Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 16
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.Parent = Container
+
+    local SwitchTrack = Instance.new("TextButton")
+    SwitchTrack.Name = "SwitchTrack"
+    SwitchTrack.Size = UDim2.new(0, 50, 0, 26)
+    SwitchTrack.Position = UDim2.new(1, -65, 0.5, 0)
+    SwitchTrack.AnchorPoint = Vector2.new(0, 0.5)
+    SwitchTrack.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+    SwitchTrack.BorderSizePixel = 0
+    SwitchTrack.Text = ""
+    SwitchTrack.AutoButtonColor = false
+    SwitchTrack.Parent = Container
+
+    local TrackCorner = Instance.new("UICorner")
+    TrackCorner.CornerRadius = UDim.new(1, 0)
+    TrackCorner.Parent = SwitchTrack
+
+    local SwitchBall = Instance.new("Frame")
+    SwitchBall.Name = "SwitchBall"
+    SwitchBall.Size = UDim2.new(0, 20, 0, 20)
+    SwitchBall.Position = UDim2.new(0, 3, 0.5, 0)
+    SwitchBall.AnchorPoint = Vector2.new(0, 0.5)
+    SwitchBall.BackgroundColor3 = Color3.fromRGB(230, 230, 230)
+    SwitchBall.BorderSizePixel = 0
+    SwitchBall.Parent = SwitchTrack
+
+    local BallCorner = Instance.new("UICorner")
+    BallCorner.CornerRadius = UDim.new(1, 0)
+    BallCorner.Parent = SwitchBall
+
+    local ativo = false
+
+    local function animarSwitch(ligado)
+        ativo = ligado
+        State.OvoInvisivel = ligado
+        InvisibleEgg.ativado = ligado
+
+        local posAlvo = ligado
+            and UDim2.new(1, -23, 0.5, 0)
+            or  UDim2.new(0, 3, 0.5, 0)
+        local corTrilho = ligado
+            and Color3.fromRGB(80, 200, 120)
+            or  Color3.fromRGB(60, 60, 70)
+        local corBola = ligado
+            and Color3.fromRGB(255, 255, 255)
+            or  Color3.fromRGB(230, 230, 230)
+
+        local tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        TweenService:Create(SwitchBall, tweenInfo, {
+            Position = posAlvo,
+            BackgroundColor3 = corBola
+        }):Play()
+        TweenService:Create(SwitchTrack, tweenInfo, {
+            BackgroundColor3 = corTrilho
+        }):Play()
+
+        local char = LocalPlayer.Character
+        if char then
+            for _, t in ipairs(char:GetChildren()) do
+                if isOvo(t) then
+                    if ligado then
+                        aplicarInvisibilidadeTool(t)
+                    else
+                        restaurarInvisibilidadeTool(t)
+                    end
+                end
+            end
+        end
+    end
+
+    SwitchTrack.MouseButton1Click:Connect(function()
+        animarSwitch(not ativo)
+    end)
+
+    -- ===== CONEXÕES =====
+    local function onCharacterAdded(char)
+        task.wait(0.5)
+        char.ChildAdded:Connect(hookOvo)
+        if State.OvoInvisivel then
+            aplicarInvisibilidadeOvo()
+        end
+    end
+
+    if LocalPlayer.Character then
+        onCharacterAdded(LocalPlayer.Character)
+    end
+    LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+
+    task.spawn(function()
+        while InvisibleEgg.gui and InvisibleEgg.gui.Parent do
+            task.wait(0.03)
+            if State.OvoInvisivel then
+                pcall(aplicarInvisibilidadeOvo)
+            end
+        end
+    end)
+
+    InvisibleEgg.gui = ScreenGui
+    return ScreenGui
+end
+
+local function toggleInvisibleEgg()
+    if not InvisibleEgg.gui then
+        criarInvisibleEggGui()
+    end
+    InvisibleEgg.aberto = not InvisibleEgg.aberto
+    InvisibleEgg.gui.Enabled = InvisibleEgg.aberto
+    if InvisibleEgg.aberto then
+        Toast("Painel Invisible Egg ON", VERDE)
+    else
+        Toast("Painel Invisible Egg OFF", AMARELO)
     end
 end
 
@@ -2134,7 +2391,6 @@ local AutoSteal = { gui = nil, aberto = false }
 local function criarAutoStealGui()
     if AutoSteal.gui then return AutoSteal.gui end
 
-    -- ===== CONFIGS =====
     local LOOP_POSITION       = Vector3.new(615.8, 70.3, -394.2)
     local VELOCIDADE_RUN      = 1e15
     local DISTANCIA_CHEGADA   = 4
@@ -2419,7 +2675,6 @@ local function criarAutoStealGui()
     BtnSteal.Parent = Content
     Instance.new("UICorner", BtnSteal).CornerRadius = UDim.new(0, 5)
 
-    -- ===== ESTADOS =====
     local _topTarget = nil
     local stealActive = false
     local stealBodyVel = nil
@@ -3342,6 +3597,11 @@ btnAnti.MouseButton1Click:Connect(function()
     toggleAntiBoss()
 end)
 
+btnInvisible.MouseButton1Click:Connect(function()
+    bounceInvisible()
+    toggleInvisibleEgg()
+end)
+
 btnTrap.MouseButton1Click:Connect(function()
     bounceTrap()
     AntiTrap.toggle()
@@ -3455,6 +3715,22 @@ task.spawn(function()
             labelAnti.Text                = "🥚 ANTI-BOSS"
         end
 
+        if InvisibleEgg.aberto then
+            contInvisible.BackgroundColor3   = Color3.fromRGB(20, 55, 28)
+            barraInvisible.BackgroundColor3  = VERDE
+            bordaInvisible.Color             = VERDE
+            labelInvisible.TextColor3        = Color3.fromRGB(180, 255, 200)
+            setaInvisible.TextColor3         = VERDE
+            labelInvisible.Text              = "👻 INVISIBLE EGG  [ON]"
+        else
+            contInvisible.BackgroundColor3   = BG_BTN
+            barraInvisible.BackgroundColor3  = ROXO
+            bordaInvisible.Color             = ROXO_DARK
+            labelInvisible.TextColor3        = Color3.fromRGB(230, 220, 255)
+            setaInvisible.TextColor3         = ROXO
+            labelInvisible.Text              = "👻 INVISIBLE EGG"
+        end
+
         if AntiTrap.ativo then
             contTrap.BackgroundColor3     = Color3.fromRGB(55, 20, 25)
             barraTrap.BackgroundColor3    = VERMELHO
@@ -3537,6 +3813,10 @@ task.spawn(function()
             ledRodape.BackgroundColor3    = VERDE
             labelStatus.TextColor3        = VERDE
             labelStatus.Text              = "STATUS: ANTI-BOSS ATIVO"
+        elseif InvisibleEgg.ativado then
+            ledRodape.BackgroundColor3    = Color3.fromRGB(180, 200, 255)
+            labelStatus.TextColor3        = Color3.fromRGB(180, 200, 255)
+            labelStatus.Text              = "STATUS: INVISIBLE EGG ON"
         elseif AntiTrap.ativo and not (Teleporte.ativo or Disfarce.ativo) then
             ledRodape.BackgroundColor3    = VERMELHO
             labelStatus.TextColor3        = VERMELHO
