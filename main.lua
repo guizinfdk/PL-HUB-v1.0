@@ -1977,7 +1977,7 @@ local function togglePainelFlutuante()
 end
 
 -- ============================================
--- 🤖 PAINEL AUTO-STEAL (v14 — HoldClosestPrompt + segurarPromptComDuracao + respawn melhorado)
+-- 🤖 PAINEL AUTO-STEAL
 -- ============================================
 local AutoSteal = { gui = nil, aberto = false }
 
@@ -1997,7 +1997,6 @@ local function criarAutoStealGui()
     local HOLD_DURATION_RETORNO  = 1.2
     local WAIT_LOOP_ANTES_DROP   = 1
     local WAIT_APOS_DROP         = 1
-    local WAIT_PROMPT_RESPAWN    = 0.5
 
     local TEMA = {
         fundo      = Color3.fromRGB(15, 15, 20),
@@ -2800,69 +2799,6 @@ local function criarAutoStealGui()
         return best
     end
 
-    -- 🆕 HOLD INSTANTÂNEO (usa fireproximityprompt)
-    local function HoldClosestPrompt(maxDistance, targetPosition)
-        maxDistance = maxDistance or 15
-        local char = LocalPlayer.Character
-        if not char then return false end
-        local hrp = char:FindFirstChild("HumanoidRootPart")
-        if not hrp then return false end
-        targetPosition = targetPosition or hrp.Position
-
-        local closestPrompt = nil
-        local shortestDist = math.huge
-
-        for _, desc in ipairs(workspace:GetDescendants()) do
-            if desc:IsA("ProximityPrompt") and desc.Parent and desc.Parent:IsA("BasePart") then
-                local dist = (targetPosition - desc.Parent.Position).Magnitude
-                if dist < shortestDist and dist <= maxDistance then
-                    shortestDist = dist
-                    closestPrompt = desc
-                end
-            end
-        end
-
-        if not closestPrompt then return false end
-
-        if fireproximityprompt then
-            pcall(fireproximityprompt, closestPrompt)
-        else
-            pcall(function() closestPrompt:InputHoldBegin() end)
-            pcall(function() closestPrompt:InputHoldEnd() end)
-        end
-        return true
-    end
-
-    -- 🆕 SEGURAR COM DURAÇÃO (usado no retorno/respawn)
-    local function segurarPromptComDuracao(refPos, maxDistance, duracaoFallback)
-        maxDistance = maxDistance or 20
-        duracaoFallback = duracaoFallback or HOLD_DURATION_RETORNO
-
-        local prompt = nil
-        if refPos then
-            local bestD = math.huge
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("ProximityPrompt")
-                    and obj.Parent
-                    and obj.Parent:IsA("BasePart")
-                then
-                    local d = (obj.Parent.Position - refPos).Magnitude
-                    if d < bestD and d <= maxDistance then
-                        bestD = d
-                        prompt = obj
-                    end
-                end
-            end
-        end
-
-        if not prompt then return false end
-
-        pcall(function() prompt:InputHoldBegin() end)
-        task.wait(prompt.HoldDuration or duracaoFallback)
-        pcall(function() prompt:InputHoldEnd() end)
-        return true
-    end
-
     BtnCancelarLoop.MouseButton1Click:Connect(function()
         pararLoop()
     end)
@@ -3014,9 +2950,21 @@ local function criarAutoStealGui()
         end
 
         BtnSteal.Text = "SEGURANDO..."
-        local okHold = HoldClosestPrompt(15, targetPos)
-        if not okHold then
-            HoldClosestPrompt(30, targetPos)
+        local prompt = acharPromptMaisProximo(targetPos)
+        if prompt then
+            local done = false
+            local conn
+            conn = prompt.Triggered:Connect(function(plr)
+                if plr == LocalPlayer then done = true end
+            end)
+            pcall(function() prompt:InputHoldBegin() end)
+            local holdTime = prompt.HoldDuration or 1.2
+            local t0 = tick()
+            while not done and (tick() - t0) < (holdTime + 1.5) do
+                RunService.Heartbeat:Wait()
+            end
+            pcall(function() prompt:InputHoldEnd() end)
+            if conn then conn:Disconnect() end
         end
 
         BtnSteal.Text = "TELEPORTANDO..."
@@ -3067,8 +3015,13 @@ local function criarAutoStealGui()
             return
         end
 
-        BtnSteal.Text = "SEGURANDO VOLTA..."
-        segurarPromptComDuracao(h.Position, 20, HOLD_DURATION_RETORNO)
+        local promptRetorno = acharPromptMaisProximo(h.Position)
+        if promptRetorno then
+            BtnSteal.Text = "SEGURANDO VOLTA..."
+            pcall(function() promptRetorno:InputHoldBegin() end)
+            task.wait(promptRetorno.HoldDuration or HOLD_DURATION_RETORNO)
+            pcall(function() promptRetorno:InputHoldEnd() end)
+        end
 
         BtnSteal.Text = "VOLTANDO..."
         if not SPAWN_POSITION then
@@ -3129,21 +3082,9 @@ local function criarAutoStealGui()
             local hrp = char:WaitForChild("HumanoidRootPart", 10)
             if not hrp then return end
             tweenPara(alvoRetorno, RESPAWN_TWEEN_TIME, function()
-                if not loopActive then return end
-                task.spawn(function()
-                    local h = char:FindFirstChild("HumanoidRootPart")
-                    if not h then return end
-                    task.wait(WAIT_PROMPT_RESPAWN)
-                    segurarPromptComDuracao(h.Position, 25, HOLD_DURATION_RETORNO)
-                    local destino = SPAWN_POSITION
-                    if not destino then
-                        destino = acharSpawnNoWorkspace()
-                        SPAWN_POSITION = destino
-                    end
-                    if destino then
-                        walkNormalTo(destino, function() end)
-                    end
-                end)
+                if loopActive and loopPos then
+                    iniciarLoop(loopPos)
+                end
             end)
         end
     end)
@@ -3362,6 +3303,7 @@ local function toggleOvoInvisivel()
     end
 end
 
+-- Hooks de personagem para o Ovo Invisível
 local function onCharOvo(char)
     task.wait(0.5)
     char.ChildAdded:Connect(hookOvo)
@@ -3375,6 +3317,7 @@ if LocalPlayer.Character then
 end
 LocalPlayer.CharacterAdded:Connect(onCharOvo)
 
+-- Loop principal do Ovo Invisível
 task.spawn(function()
     while gui.Parent do
         task.wait(0.03)
